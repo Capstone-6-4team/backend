@@ -6,19 +6,23 @@ import lombok.AccessLevel;
 import lombok.Getter;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 
 @Getter
 @Entity
 public class Room extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "guesthouse_id", nullable = false)
     private GuestHouse guestHouse;
 
-    @Column(nullable = false)
+    @NotNull
+    @Positive
     private int capacity;
 
-    @Column(nullable = false)
+    @NotNull
+    @Positive
     private int price;
 
     @Embedded

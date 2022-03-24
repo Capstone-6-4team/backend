@@ -8,6 +8,7 @@ import javax.persistence.*;
 @DiscriminatorValue("G")
 public class GuestHousePhoto extends Photo {
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "guesthouse_id", nullable = false)
     private GuestHouse guestHouse;
 }

@@ -1,26 +1,37 @@
 package com.example.capstone2.user.entity;
 
 import com.example.capstone2.common.entity.BaseEntity;
-import lombok.Getter;
+import org.hibernate.validator.constraints.UniqueElements;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.PositiveOrZero;
 
 @Entity
 public class User extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(unique = true)
+    @Email
+    @NotNull
     private String email;
 
-    @Column(nullable = false)
+    @NotNull
     private String password;
 
-    @Column(nullable = false)
+    @NotNull
     private String name;
 
-    @Column(nullable = false)
+    @NotNull
+    @Enumerated(value = EnumType.ORDINAL)
     private UserType userType;
 
-    @Column(nullable = false)
+    @PositiveOrZero
+    @NotNull
     private Long point;
+
+
 }

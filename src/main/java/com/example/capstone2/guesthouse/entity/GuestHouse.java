@@ -10,12 +10,12 @@ import javax.persistence.*;
 @Entity
 public class GuestHouse extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User host;
 
     @OneToOne
-    @Column(name = "thumbnail_photo_id")
+    @JoinColumn(name = "thumbnail_photo_id")
     private GuestHousePhoto thumbnail;
     // 위치 정보 추가해야함!
 }

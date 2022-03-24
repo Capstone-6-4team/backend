@@ -8,6 +8,7 @@ import javax.persistence.*;
 @DiscriminatorValue("R")
 public class RoomPhoto extends Photo {
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 }

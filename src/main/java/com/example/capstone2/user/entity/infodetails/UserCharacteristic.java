@@ -9,9 +9,16 @@ import javax.persistence.*;
 @Entity
 public class UserCharacteristic extends BaseEntity {
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 
+    @Enumerated(value = EnumType.STRING)
+    private Nationality nationality;
+
+
+
+    @Enumerated(value = EnumType.STRING)
     private Gender gender;
     private boolean smoke;
 
@@ -20,7 +27,7 @@ public class UserCharacteristic extends BaseEntity {
 
     private boolean drinking;
 
-    private int bedtime;
+    private int bedTime;
     private int wakeUpTime;
 
 }
