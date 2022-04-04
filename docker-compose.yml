@@ -1,0 +1,74 @@
+version: "3.7"
+services:
+  database:
+    platform: linux/x86_64
+    image: mysql:5.7
+    command: [ "--lower_case_table_names=1",
+               "--ignore-db-dir=lost+found",
+               "--character-set-server=utf8",
+               "--collation-server=utf8_general_ci" ]
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: cs
+      MYSQL_PASSWORD: cs
+      MYSQL_DATABASE: cap2_db
+    ports:
+      - "3306:3306"
+    restart: always
+    volumes:
+      - "./database/cap2-db/:/application"
+    container_name: cap2-db
+    networks:
+      - backend-network
+
+  spring-boot:
+    build: .
+    ports:
+      - "8080:8080"
+    container_name: cap2-backend
+    restart: always
+    depends_on:
+      - database
+    volumes:
+      - .:/cap2/tmp:rw
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/cap2_db?useSSL=false
+      SPRING_DATASOURCE_USERNAME: cs
+      SPRING_DATASOURCE_PASSWORD: cs
+
+      SPRING_DATA_MONGODB_HOST: mongo
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_DATA_MONGODB_USERNAME: cs
+      SPRING_DATA_MONGODB_PASSWORD: cs
+
+    links:
+      - mongodb
+      - database
+    networks:
+      - backend-network
+      - backend-network2
+
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_DB_USERNAME: cs
+      MONGO_DB_PASSWORD: cs
+
+    volumes:
+      - "./database/mongodb/:/application"
+    container_name: cap2-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - backend-network2
+    hostname: "mongo"
+
+
+
+
+networks:
+  backend-network:
+    driver: bridge
+  backend-network2:
+    driver: bridge
