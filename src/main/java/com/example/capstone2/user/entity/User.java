@@ -1,8 +1,8 @@
 package com.example.capstone2.user.entity;
 
 import com.example.capstone2.common.entity.BaseEntity;
-import org.hibernate.validator.constraints.UniqueElements;
-
+import com.example.capstone2.user.dto.RegisterRequest;
+import lombok.Getter;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -12,7 +12,8 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
 
 @Entity
-public class User extends BaseEntity {
+@Getter
+public class User extends BaseEntity{
 
     @Column(unique = true)
     @Email
@@ -33,5 +34,14 @@ public class User extends BaseEntity {
     @NotNull
     private Long point;
 
+    public static User from(RegisterRequest registerRequest) {
+        User user = new User();
+        user.email = registerRequest.getEmail();
+        user.password = registerRequest.getPassword();
+        user.name = registerRequest.getName();
+        user.userType = registerRequest.getUserType();
+        user.point = 0l;
 
+        return user;
+    }
 }
