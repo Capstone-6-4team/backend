@@ -70,13 +70,10 @@ public class JwtService {
     }
 
     public String generateToken(Authentication authentication) {
-        System.out.println("JwtService.generateToken");
         String authorities = authentication.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
-
-        System.out.println("authorities = " + authorities);
 
         Date now = new Date();
         Date expirationDate = new Date(now.getTime() + ACCESS_TOKEN_EXPIRATION_MS);
@@ -139,6 +136,4 @@ public class JwtService {
         Authentication authentication = getAuthentication(jwt);
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
-
-
 }
