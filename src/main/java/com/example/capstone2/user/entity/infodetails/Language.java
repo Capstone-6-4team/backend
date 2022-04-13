@@ -5,8 +5,6 @@ import com.example.capstone2.common.entityenum.EntityEnumConverter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import javax.persistence.Converter;
-
 
 @AllArgsConstructor
 @Getter

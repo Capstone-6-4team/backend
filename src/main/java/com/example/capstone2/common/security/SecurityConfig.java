@@ -1,8 +1,6 @@
 package com.example.capstone2.common.security;
 
 import com.example.capstone2.common.jwt.JwtAuthenticationFilter;
-import com.example.capstone2.common.response.ApiResponse;
-import com.example.capstone2.common.response.ResultCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +35,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/api/user/register").permitAll()
                 .antMatchers("/api/auth/login").permitAll()
+                .antMatchers("/**").permitAll()
                 .anyRequest().authenticated();
 
         http.cors().configurationSource(corsConfigurationSource());

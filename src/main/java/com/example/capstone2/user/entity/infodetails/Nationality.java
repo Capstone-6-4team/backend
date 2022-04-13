@@ -10,8 +10,8 @@ import javax.persistence.Converter;
 @Getter
 @AllArgsConstructor
 public enum Nationality implements EntityEnum {
-    KR("KOREA", "KR"),
-    US("UNITED_STATE", "US");
+    KR("KOREA", "kr"),
+    US("UNITED_STATE", "us");
 
     String name;
     String code;
