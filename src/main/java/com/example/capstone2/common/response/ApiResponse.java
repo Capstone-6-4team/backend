@@ -4,11 +4,13 @@ import lombok.Getter;
 
 @Getter
 public class ApiResponse<T> {
+    private final int statusCode;
     private final ResultCode code;
     private final String message;
     private final T data;
 
     private ApiResponse(ResultCode code, String message, T data) {
+        this.statusCode = code.getCode();
         this.code = code;
         this.message = message;
         this.data = data;

@@ -3,6 +3,7 @@ package com.example.capstone2.user.service;
 import com.example.capstone2.user.dao.UserRepository;
 import com.example.capstone2.user.dto.RegisterRequest;
 import com.example.capstone2.user.entity.User;
+import com.example.capstone2.user.entity.infodetails.AvailableLanguage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +41,8 @@ public class UserService implements UserDetailsService {
         );
     }
 
-    public boolean isAvailableEmail(String email) {
+    @Transactional(readOnly = true)
+    public boolean isExistEmail(String email) {
         Optional<User> user = userRepository.findByEmail(email);
         return user.isPresent();
     }
@@ -48,6 +51,11 @@ public class UserService implements UserDetailsService {
     public void create(RegisterRequest registerRequest) {
         registerRequest.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         User user = User.from(registerRequest);
+        user.getAvailableLanguages().addAll(registerRequest.getAvailableLanguages()
+                .stream()
+                .map(l -> AvailableLanguage.of(l, user))
+                .collect(Collectors.toList()));
+
         userRepository.save(user);
     }
 }

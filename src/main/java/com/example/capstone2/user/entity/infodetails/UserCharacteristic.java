@@ -1,12 +1,12 @@
 package com.example.capstone2.user.entity.infodetails;
 
-import com.example.capstone2.common.entity.BaseEntity;
 import com.example.capstone2.user.entity.Gender;
-import com.example.capstone2.user.entity.User;
+import lombok.Getter;
 
 import javax.persistence.*;
 
 @Embeddable
+@Getter
 public class UserCharacteristic {
 
     @Convert(converter = Nationality.Converter.class)
@@ -17,7 +17,7 @@ public class UserCharacteristic {
     private boolean smoke;
 
     @Enumerated(value = EnumType.STRING)
-    private String MBTI;
+    private MBTI mbti;
 
     private boolean drinking;
 

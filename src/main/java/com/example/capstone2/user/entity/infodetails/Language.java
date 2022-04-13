@@ -1,19 +1,26 @@
 package com.example.capstone2.user.entity.infodetails;
 
-import com.example.capstone2.common.entity.BaseEntity;
+import com.example.capstone2.common.entityenum.EntityEnum;
+import com.example.capstone2.common.entityenum.EntityEnumConverter;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.OneToMany;
-import java.util.List;
+import javax.persistence.Converter;
 
-@Entity
-public class Language extends BaseEntity {
 
-    @OneToMany(mappedBy = "language", cascade = CascadeType.REMOVE)
-    private List<AvailableLanguage> availableLanguage;
+@AllArgsConstructor
+@Getter
+public enum Language implements EntityEnum {
+    KOREAN("한국어", "ko"),
+    ENGLISH("영어", "en");
 
-    @Column(unique = true)
-    String language;
+    private String name;
+    private String code;
+
+    @javax.persistence.Converter
+    public static class Converter extends EntityEnumConverter<Language> {
+        public Converter() {
+            super(Language.class);
+        }
+    }
 }

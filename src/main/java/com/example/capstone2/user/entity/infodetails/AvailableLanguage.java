@@ -9,10 +9,16 @@ import javax.persistence.*;
 public class AvailableLanguage extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "language_id")
-    Language language;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    User user;
+    @Convert(converter = Language.Converter.class)
+    private Language language;
+
+    public static AvailableLanguage of(Language lang, User user) {
+        AvailableLanguage availableLanguage = new AvailableLanguage();
+        availableLanguage.language = lang;
+        availableLanguage.user = user;
+        return availableLanguage;
+    }
 }
