@@ -1,15 +1,24 @@
 package com.example.capstone2.common.entity;
 
+import lombok.Getter;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
-@Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "DTYPE")
-public class Photo extends BaseEntity{
+@Embeddable
+@Getter
+public class Photo{
 
     @NotNull
     String filePath;
     @NotNull
     String fileName;
+
+    public static Photo of(String filePath, String fileName) {
+        Photo photo = new Photo();
+        photo.filePath = filePath;
+        photo.fileName = fileName;
+
+        return photo;
+    }
 }
