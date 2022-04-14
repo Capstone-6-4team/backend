@@ -51,11 +51,6 @@ public class UserService implements UserDetailsService {
     public void create(RegisterRequest registerRequest) {
         registerRequest.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         User user = User.from(registerRequest);
-        user.getAvailableLanguages().addAll(registerRequest.getAvailableLanguages()
-                .stream()
-                .map(l -> AvailableLanguage.of(l, user))
-                .collect(Collectors.toList()));
-
         userRepository.save(user);
     }
 }
