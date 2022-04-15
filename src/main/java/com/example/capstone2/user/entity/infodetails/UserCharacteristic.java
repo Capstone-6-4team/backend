@@ -1,33 +1,26 @@
 package com.example.capstone2.user.entity.infodetails;
 
-import com.example.capstone2.common.entity.BaseEntity;
 import com.example.capstone2.user.entity.Gender;
-import com.example.capstone2.user.entity.User;
+import lombok.Getter;
 
 import javax.persistence.*;
 
-@Entity
-public class UserCharacteristic extends BaseEntity {
+@Embeddable
+@Getter
+public class UserCharacteristic {
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = Nationality.Converter.class)
     private Nationality nationality;
 
-
-
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = Gender.Converter.class)
     private Gender gender;
     private boolean smoke;
 
-    @Column(length = 4)
-    private String MBTI;
+    @Enumerated(value = EnumType.STRING)
+    private MBTI mbti;
 
     private boolean drinking;
 
     private int bedTime;
     private int wakeUpTime;
-
 }
