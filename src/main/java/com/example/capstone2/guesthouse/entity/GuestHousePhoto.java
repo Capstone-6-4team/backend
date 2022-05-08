@@ -21,9 +21,16 @@ public class GuestHousePhoto extends BaseEntity {
     @Embedded
     Photo photo;
 
+//    public static GuestHousePhoto of(GuestHouse guestHouse, String filePath, String fileName) {
+//        GuestHousePhoto guestHousePhoto = new GuestHousePhoto();
+//        guestHousePhoto.guestHouse = guestHouse; // was comment
+//        guestHousePhoto.photo = Photo.of(filePath, fileName);
+//
+//        return guestHousePhoto;
+//    }
+
     public static GuestHousePhoto of(String filePath, String fileName) {
         GuestHousePhoto guestHousePhoto = new GuestHousePhoto();
-//        guestHousePhoto.guestHouse = guestHouse;
         guestHousePhoto.photo = Photo.of(filePath, fileName);
 
         return guestHousePhoto;

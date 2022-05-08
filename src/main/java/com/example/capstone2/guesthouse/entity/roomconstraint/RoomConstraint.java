@@ -1,8 +1,5 @@
 package com.example.capstone2.guesthouse.entity.roomconstraint;
 
-import com.example.capstone2.guesthouse.entity.roomconstraint.GenderConstraint;
-import com.example.capstone2.user.entity.Gender;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,9 +19,11 @@ public class RoomConstraint {
     @Enumerated(value = EnumType.ORDINAL)
     GenderConstraint genderConstraint;
 
-    @Builder
-    public RoomConstraint(boolean smoke, GenderConstraint genderConstraint){
-        this.smoke=smoke;
-        this.genderConstraint=genderConstraint;
+    public static RoomConstraint of(boolean smoke, GenderConstraint genderConstraint) {
+        RoomConstraint roomConstraint = new RoomConstraint();
+        roomConstraint.smoke=smoke;
+        roomConstraint.genderConstraint=genderConstraint;
+
+        return roomConstraint;
     }
 }

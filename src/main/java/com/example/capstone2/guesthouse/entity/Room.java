@@ -36,12 +36,16 @@ public class Room extends BaseEntity {
     @Embedded
     private RoomConstraint roomConstraint;
 
-    @Builder
-    public Room(GuestHouse guestHouse, String roomName, int capacity, int price, RoomConstraint roomConstraint){
-        this.guestHouse=guestHouse;
-        this.roomName=roomName;
-        this.capacity=capacity;
-        this.price=price;
-        this.roomConstraint=roomConstraint;
+    public static Room of(GuestHouse guestHouse, String roomName, int capacity, int price,
+                          RoomConstraint roomConstraint){
+        Room room = new Room();
+
+        room.guestHouse=guestHouse;
+        room.roomName=roomName;
+        room.capacity=capacity;
+        room.price=price;
+        room.roomConstraint=roomConstraint;
+
+        return room;
     }
 }
