@@ -53,4 +53,11 @@ public class UserService implements UserDetailsService {
         User user = User.from(registerRequest);
         userRepository.save(user);
     }
+
+    @Transactional(readOnly = true)
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow(() -> {
+            throw new UsernameNotFoundException(String.format("[%s]는 등록되지 않은 이메일입니다."));
+        });
+    }
 }

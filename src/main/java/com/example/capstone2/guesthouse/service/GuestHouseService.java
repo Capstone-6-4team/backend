@@ -39,6 +39,7 @@ public class GuestHouseService {
     private String GEOCODE_USER_INFO;
     private static String GEOCODE_URL = "http://dapi.kakao.com/v2/local/search/address.json?query=";
 
+    @Transactional
     public Long createGuestHouse(String ghName,
                                        String location, List<MultipartFile> multipartFiles,
                                        MultipartFile multipartFile) throws IOException {
@@ -68,6 +69,7 @@ public class GuestHouseService {
         return gh.getId();
     }
 
+    @Transactional
     public void createGuestHouseRooms(String roomInfoJson, String ghId, List<MultipartFile> files) throws IOException {
         Long id = Long.valueOf(ghId);
         String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + findGuestHouseNameById(id);
@@ -115,6 +117,11 @@ public class GuestHouseService {
 
 
         return fileId;
+    }
+
+    @Transactional
+    public Room findRoomById(Long roomId) {
+        return roomRepository.getById(roomId);
     }
 
     private String findGuestHouseNameById(Long id) {
