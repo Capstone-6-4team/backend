@@ -48,4 +48,8 @@ public class Room extends BaseEntity {
 
         return room;
     }
+
+    public void addPhoto(RoomPhoto photo) {
+        this.roomPhotos.add(photo);
+    }
 }

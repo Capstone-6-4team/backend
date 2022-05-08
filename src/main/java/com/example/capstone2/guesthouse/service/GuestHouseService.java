@@ -6,6 +6,8 @@ import com.example.capstone2.guesthouse.entity.*;
 import com.example.capstone2.guesthouse.entity.roomconstraint.GenderConstraint;
 import com.example.capstone2.guesthouse.entity.roomconstraint.RoomConstraint;
 import com.example.capstone2.guesthouse.dto.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,20 +32,20 @@ import java.util.*;
 public class GuestHouseService {
     private final GuestHouseRepository guestHouseRepository;
     private final RoomRepository roomRepository;
+    private final ObjectMapper objectMapper;
+
 
     @Value("${kakao.api-key}")
     private String GEOCODE_USER_INFO;
     private static String GEOCODE_URL = "http://dapi.kakao.com/v2/local/search/address.json?query=";
 
-    public GuestHouse createGuestHouse(String ghName,
+    public Long createGuestHouse(String ghName,
                                        String location, List<MultipartFile> multipartFiles,
                                        MultipartFile multipartFile) throws IOException {
 
         HashMap<String, Double> locationInfo = convertAddressToLatitudeLongitude(location);
         Double latitude = locationInfo.get("latitude");
-        System.out.println("latitude = " + latitude);
         Double longitude = locationInfo.get("longitude");
-        System.out.println("longitude = " + longitude);
 
         // 디렉토리 경로 중 tempUser 부분은 유저 구현이 끝나면 실제 유저 이름으로 대체
         String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + ghName;
@@ -61,40 +63,39 @@ public class GuestHouseService {
         Thumbnail thumbnail = Thumbnail.of(UPLOAD_PATH, thumbnailId);
 
         GuestHouse gh = GuestHouse.of(ghPhotos, thumbnail, ghName, latitude, longitude, location);
-        GuestHouse save = guestHouseRepository.save(gh);
+        guestHouseRepository.save(gh);
 
-        return save;
+        return gh.getId();
     }
 
-    public void createGuestHouseRooms(List<RoomRequest> rooms, String ghId, List<MultipartFile> files) throws IOException {
+    public void createGuestHouseRooms(String roomInfoJson, String ghId, List<MultipartFile> files) throws IOException {
         Long id = Long.valueOf(ghId);
         String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + findGuestHouseNameById(id);
 
-        for(RoomRequest room : rooms){
-            boolean smoke = room.isSmoke();
-            GenderConstraint gConstraint = room.getGenderConstraint();
+        List<RoomRequest> roomRequests = jsonToRoomRequestList(roomInfoJson);
+        GuestHouse guestHouse = guestHouseRepository.getById(id);
+
+        int photoIdx = 0;
+        for(RoomRequest roomRequest : roomRequests){
+            boolean smoke = roomRequest.isSmoke();
+            GenderConstraint gConstraint = roomRequest.getGenderConstraint();
             RoomConstraint rConstraint = RoomConstraint.of(smoke, gConstraint);
 
-            int numOfPhoto = room.getNumOfPhoto();
+            int numOfPhoto = roomRequest.getNumOfPhoto();
 
-            GuestHouse guestHouse = guestHouseRepository.getById(id);
+            Room room = Room.of(guestHouse, roomRequest.getRoomName(),
+                    roomRequest.getCapacity(), roomRequest.getPrice(), rConstraint);
 
-            Room r = Room.of(guestHouse, room.getRoomName(),
-                    room.getCapacity(), room.getPrice(), rConstraint);
-
-            List<RoomPhoto> rPhotos = r.getRoomPhotos();
-
-            for(int i=0;i<numOfPhoto;i++){
-                MultipartFile file = files.get(0);
-                String fileId = saveEachPhoto(UPLOAD_PATH, file, "rooms\\" + room.getRoomName());
-                RoomPhoto rP = RoomPhoto.of(r, UPLOAD_PATH, fileId);
-//                rP.setRoom(r);
-                rPhotos.add(rP);
-
-                files.remove(0);
+            // 각 방의 사진을 표현하는 방식을 바꾸는 것이 좋을 듯
+            for(int i=photoIdx; i < photoIdx + numOfPhoto;i++){
+                MultipartFile file = files.get(i);
+                String fileId = saveEachPhoto(UPLOAD_PATH, file, "rooms\\" + roomRequest.getRoomName());
+                RoomPhoto roomPhoto = RoomPhoto.of(room, UPLOAD_PATH, fileId);
+                room.addPhoto(roomPhoto);
+                files.remove(i);
             }
-
-            roomRepository.save(r);
+            photoIdx += numOfPhoto;
+            roomRepository.save(room);
         }
     }
 
@@ -161,9 +162,6 @@ public class GuestHouseService {
                 String latitude = address1.getString("x");
                 String longitude = address1.getString("y");
 
-//                System.out.println("latitude = " + latitude);
-//                System.out.println("longitude = " + longitude);
-
                 locationInfo.put("latitude", Double.valueOf(latitude));
                 locationInfo.put("longitude", Double.valueOf(longitude));
             }
@@ -175,55 +173,17 @@ public class GuestHouseService {
         return locationInfo;
     }
 
-    public List<RoomRequest> convertStringToListRoomRequest(List<String> rooms) {
-        List<RoomRequest> result=new ArrayList<>();
-
-        for(String room : rooms){
-            RoomRequest roomRequest=new RoomRequest();
-
-//            System.out.println("room = " + room);
-            room=room.replace("{", "");
-            room=room.replace("}", "");
-            String[] stringNameValuePairs = room.split(",");
-
-            for(String nameValuePair : stringNameValuePairs){
-                String[] nameValue = nameValuePair.split(":");
-                if(nameValue[0].equals("\"roomName\"")){
-//                    System.out.println("roomName");
-                    roomRequest.setRoomName(nameValue[1].replace("\"", ""));
-                }
-                else if(nameValue[0].equals("\"capacity\"")){
-//                    System.out.println("capacity");
-                    roomRequest.setCapacity(Integer.valueOf(nameValue[1]));
-                }
-                else if(nameValue[0].equals("\"price\"")){
-//                    System.out.println("price");
-                    roomRequest.setPrice(Integer.valueOf(nameValue[1]));
-                }
-                else if(nameValue[0].equals("\"numOfPhoto\"")){
-//                    System.out.println("numOfPhoto");
-                    roomRequest.setNumOfPhoto(Integer.valueOf(nameValue[1]));
-                }
-                else if(nameValue[0].equals("\"smoke\"")){
-//                    System.out.println("smoke");
-                    roomRequest.setSmoke(Boolean.valueOf(nameValue[1]));
-                }
-                else if(nameValue[0].equals("\"genderConstraint\"")){
-//                    System.out.println("genderConstraint");
-                    if(Integer.valueOf(nameValue[1])==0){
-                        roomRequest.setGenderConstraint(GenderConstraint.MALE_ONLY);
-                    }
-                    else if(Integer.valueOf(nameValue[1])==1){
-                        roomRequest.setGenderConstraint(GenderConstraint.FEMALE_ONLY);
-                    }
-                    else{
-                        roomRequest.setGenderConstraint(GenderConstraint.MIXED);
-                    }
-
-                }
+    public List<RoomRequest> jsonToRoomRequestList(String rooms) {
+        List<RoomRequest> result = null;
+        try {
+            if(rooms.startsWith("[")) {
+                result = Arrays.asList(objectMapper.readValue(rooms, RoomRequest[].class));
+            } else {
+                result = new ArrayList<>();
+                result.add(objectMapper.readValue(rooms, RoomRequest.class));
             }
-//            System.out.println("roomRequest = " + roomRequest);
-            result.add(roomRequest);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
         return result;
     }
