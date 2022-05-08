@@ -11,7 +11,6 @@ import javax.persistence.*;
 @Table(name = "roomphoto")
 public class RoomPhoto extends BaseEntity {
 
-    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
     private Room room;
@@ -19,9 +18,9 @@ public class RoomPhoto extends BaseEntity {
     @Embedded
     Photo photo;
 
-    public static RoomPhoto of(String filePath, String fileName) {
+    public static RoomPhoto of(Room room, String filePath, String fileName) {
         RoomPhoto roomPhoto = new RoomPhoto();
-//        roomPhoto.room = room;
+        roomPhoto.room = room;
         roomPhoto.photo = Photo.of(filePath, fileName);
 
         return roomPhoto;
