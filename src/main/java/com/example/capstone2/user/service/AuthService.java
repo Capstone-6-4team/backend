@@ -4,6 +4,7 @@ import com.example.capstone2.common.jwt.JwtService;
 import com.example.capstone2.common.response.ApiResponse;
 import com.example.capstone2.user.dto.LoginRequest;
 import com.example.capstone2.user.dto.LoginResponse;
+import com.example.capstone2.user.entity.UserType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;

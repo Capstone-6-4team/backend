@@ -19,6 +19,6 @@ public class Reservation extends BaseEntity {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    LocalDate checkInDate;
-    LocalDate checkOutDate;
+    private LocalDate checkInDate;
+    private LocalDate checkOutDate;
 }
