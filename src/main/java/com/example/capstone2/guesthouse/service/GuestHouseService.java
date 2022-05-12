@@ -8,6 +8,8 @@ import com.example.capstone2.guesthouse.entity.roomconstraint.RoomConstraint;
 import com.example.capstone2.guesthouse.dto.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -24,6 +26,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.*;
 
 @Transactional
@@ -34,10 +37,22 @@ public class GuestHouseService {
     private final RoomRepository roomRepository;
     private final ObjectMapper objectMapper;
 
-
     @Value("${kakao.api-key}")
     private String GEOCODE_USER_INFO;
     private static String GEOCODE_URL = "http://dapi.kakao.com/v2/local/search/address.json?query=";
+    private static final String UPLOAD_PATH = Path.of(System.getProperty("user.dir"),
+            "directory", "photos").toString();
+
+    @Getter
+    @AllArgsConstructor
+    private enum Category {
+        ROOM("rooms"),
+        GUESTHOUSE("guesthouse"),
+        THUMBNAIL("thumbnail");
+
+        private String name;
+    }
+
 
     @Transactional
     public Long createGuestHouse(String ghName,
@@ -49,19 +64,19 @@ public class GuestHouseService {
         Double longitude = locationInfo.get("longitude");
 
         // 디렉토리 경로 중 tempUser 부분은 유저 구현이 끝나면 실제 유저 이름으로 대체
-        String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + ghName;
-
+        String path = Path.of(UPLOAD_PATH, Category.GUESTHOUSE.getName(), ghName).toString();
         List<GuestHousePhoto> ghPhotos = new ArrayList<>();
 
         List<MultipartFile> files=multipartFiles;
         for (MultipartFile file : files){
-            String fileId = saveEachPhoto(UPLOAD_PATH, file, "photos");
-            GuestHousePhoto ghP = GuestHousePhoto.of(UPLOAD_PATH, fileId);
+            String fileId = saveEachPhoto(path, file);
+            GuestHousePhoto ghP = GuestHousePhoto.of(path, fileId);
             ghPhotos.add(ghP);
         }
 
-        String thumbnailId = saveEachPhoto(UPLOAD_PATH, multipartFile, "thumbnail");
-        Thumbnail thumbnail = Thumbnail.of(UPLOAD_PATH, thumbnailId);
+        path = Path.of(UPLOAD_PATH, Category.THUMBNAIL.getName(), ghName).toString();
+        String thumbnailId = saveEachPhoto(path, multipartFile);
+        Thumbnail thumbnail = Thumbnail.of(path, thumbnailId);
 
         GuestHouse gh = GuestHouse.of(ghPhotos, thumbnail, ghName, latitude, longitude, location);
         guestHouseRepository.save(gh);
@@ -72,8 +87,6 @@ public class GuestHouseService {
     @Transactional
     public void createGuestHouseRooms(String roomInfoJson, String ghId, List<MultipartFile> files) throws IOException {
         Long id = Long.valueOf(ghId);
-        String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + findGuestHouseNameById(id);
-
         List<RoomRequest> roomRequests = jsonToRoomRequestList(roomInfoJson);
         GuestHouse guestHouse = guestHouseRepository.getById(id);
 
@@ -87,12 +100,12 @@ public class GuestHouseService {
 
             Room room = Room.of(guestHouse, roomRequest.getRoomName(),
                     roomRequest.getCapacity(), roomRequest.getPrice(), rConstraint);
-
+            String path = Path.of(UPLOAD_PATH, "rooms", roomRequest.getRoomName()).toString();
             // 각 방의 사진을 표현하는 방식을 바꾸는 것이 좋을 듯
             for(int i=photoIdx; i < photoIdx + numOfPhoto;i++){
                 MultipartFile file = files.get(i);
-                String fileId = saveEachPhoto(UPLOAD_PATH, file, "rooms\\" + roomRequest.getRoomName());
-                RoomPhoto roomPhoto = RoomPhoto.of(room, UPLOAD_PATH, fileId);
+                String fileId = saveEachPhoto(path, file);
+                RoomPhoto roomPhoto = RoomPhoto.of(room, path, fileId);
                 room.addPhoto(roomPhoto);
                 files.remove(i);
             }
@@ -101,14 +114,14 @@ public class GuestHouseService {
         }
     }
 
-    private String saveEachPhoto(String UPLOAD_PATH, MultipartFile file, String category) throws IOException {
+    private String saveEachPhoto(String path, MultipartFile file) throws IOException {
         String fileId = (new Date().getTime()) + "" + (new Random().ints(1000, 9999).findAny().getAsInt()); // 현재 날짜와 랜덤 정수값으로 새로운 파일명 만들기
         String originName = file.getOriginalFilename(); // ex) 파일.jpg
         String fileExtension = originName.substring(originName.lastIndexOf(".") + 1); // ex) jpg
 //        originName = originName.substring(0, originName.lastIndexOf(".")); // ex) 파일
         long fileSize = file.getSize(); // 파일 사이즈
 
-        File fileSave = new File(UPLOAD_PATH + "\\" + category, fileId + "." + fileExtension); // ex) fileId.jpg
+        File fileSave = new File(path, fileId + "." + fileExtension); // ex) fileId.jpg
         if(!fileSave.exists()) { // 폴더가 없을 경우 폴더 만들기
             fileSave.mkdirs();
         }

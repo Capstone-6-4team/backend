@@ -1,15 +1,16 @@
 package com.example.capstone2.reservation.controller;
 
 import com.example.capstone2.reservation.dto.ReservationCreateRequest;
+import com.example.capstone2.reservation.dto.RoommateInfoDto;
+import com.example.capstone2.reservation.dto.RoommateInfoRequest;
 import com.example.capstone2.reservation.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/reservation")
@@ -23,10 +24,14 @@ public class ReservationController {
     public ResponseEntity<?> createReservation(Authentication authentication,
                                                @RequestBody ReservationCreateRequest request) {
         String email = authentication.getName();
-        System.out.println("email = " + email);
-
         reservationService.create(email, request);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/roommate-info")
+    @PreAuthorize("isAuthenticated() and hasRole('ROLE_GUEST')")
+    public ResponseEntity<List<RoommateInfoDto>> getRoommateInfo(@RequestBody RoommateInfoRequest request) {
+        return ResponseEntity.ok(reservationService.getRoommateInfo(request));
     }
 }

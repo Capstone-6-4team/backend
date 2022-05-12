@@ -18,10 +18,12 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
 
 
     @Override
-    public List<Reservation> findAllRelated(Room room, LocalDate checkInDate) {
+    public List<Reservation> findAllRelated(Room room, LocalDate date) {
         return queryFactory.selectFrom(reservation)
-                .where(reservation.room.eq(room).and(reservation.checkInDate.eq(checkInDate)))
-                .leftJoin(reservation.user, user)
+                .where(reservation.room.eq(room)
+                        .and(reservation.checkInDate.loe(date))
+                        .and(reservation.checkOutDate.gt(date)))
+                .innerJoin(reservation.user, user)
                 .fetchJoin()
                 .fetch();
     }
