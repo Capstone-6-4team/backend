@@ -8,4 +8,9 @@ import java.time.LocalDate;
 public class RoommateInfoRequest {
     private Long roomId;
     private LocalDate checkInDate;
+
+    public RoommateInfoRequest(Long roomId, String checkInDate) {
+        this.roomId = roomId;
+        this.checkInDate = LocalDate.parse(checkInDate);
+    }
 }

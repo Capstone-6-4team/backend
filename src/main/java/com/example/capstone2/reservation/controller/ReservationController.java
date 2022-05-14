@@ -30,8 +30,10 @@ public class ReservationController {
     }
 
     @GetMapping(value = "/roommate-info")
-    @PreAuthorize("isAuthenticated() and hasRole('ROLE_GUEST')")
-    public ResponseEntity<List<RoommateInfoDto>> getRoommateInfo(@RequestBody RoommateInfoRequest request) {
+//    @PreAuthorize("isAuthenticated() and hasRole('ROLE_GUEST')")
+    public ResponseEntity<List<RoommateInfoDto>> getRoommateInfo(@ModelAttribute RoommateInfoRequest request) {
+        System.out.println("request.getRoomId() = " + request.getRoomId());
+        System.out.println("request.getCheckInDate() = " + request.getCheckInDate());
         return ResponseEntity.ok(reservationService.getRoommateInfo(request));
     }
 }
