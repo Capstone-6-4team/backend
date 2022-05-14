@@ -90,7 +90,6 @@ public class GuestHouseService {
         List<RoomRequest> roomRequests = jsonToRoomRequestList(roomInfoJson);
         GuestHouse guestHouse = guestHouseRepository.getById(id);
 
-        int photoIdx = 0;
         for(RoomRequest roomRequest : roomRequests){
             boolean smoke = roomRequest.isSmoke();
             GenderConstraint gConstraint = roomRequest.getGenderConstraint();
@@ -100,16 +99,15 @@ public class GuestHouseService {
 
             Room room = Room.of(guestHouse, roomRequest.getRoomName(),
                     roomRequest.getCapacity(), roomRequest.getPrice(), rConstraint);
-            String path = Path.of(UPLOAD_PATH, "rooms", roomRequest.getRoomName()).toString();
+            String path = Path.of(UPLOAD_PATH, "rooms", roomRequest.getRoomName()).toAbsolutePath().toString();
             // 각 방의 사진을 표현하는 방식을 바꾸는 것이 좋을 듯
-            for(int i=photoIdx; i < photoIdx + numOfPhoto;i++){
-                MultipartFile file = files.get(i);
+            for(int i = 0; i < numOfPhoto; i++) {
+                MultipartFile file = files.get(0);
                 String fileId = saveEachPhoto(path, file);
                 RoomPhoto roomPhoto = RoomPhoto.of(room, path, fileId);
                 room.addPhoto(roomPhoto);
-                files.remove(i);
+                files.remove(0);
             }
-            photoIdx += numOfPhoto;
             roomRepository.save(room);
         }
     }
@@ -118,18 +116,17 @@ public class GuestHouseService {
         String fileId = (new Date().getTime()) + "" + (new Random().ints(1000, 9999).findAny().getAsInt()); // 현재 날짜와 랜덤 정수값으로 새로운 파일명 만들기
         String originName = file.getOriginalFilename(); // ex) 파일.jpg
         String fileExtension = originName.substring(originName.lastIndexOf(".") + 1); // ex) jpg
+        String fileName = fileId + "." + fileExtension;
 //        originName = originName.substring(0, originName.lastIndexOf(".")); // ex) 파일
         long fileSize = file.getSize(); // 파일 사이즈
-
-        File fileSave = new File(path, fileId + "." + fileExtension); // ex) fileId.jpg
+        File fileSave = new File(path, fileName); // ex) fileId.jpg
         if(!fileSave.exists()) { // 폴더가 없을 경우 폴더 만들기
             fileSave.mkdirs();
         }
-
         file.transferTo(fileSave); // fileSave의 형태로 파일 저장
 
 
-        return fileId;
+        return fileName;
     }
 
     @Transactional

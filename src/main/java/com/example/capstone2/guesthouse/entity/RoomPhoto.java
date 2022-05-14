@@ -3,11 +3,13 @@ package com.example.capstone2.guesthouse.entity;
 import com.example.capstone2.common.entity.BaseEntity;
 import com.example.capstone2.common.entity.Photo;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 
 @Entity
+@Getter
 @Table(name = "roomphoto")
 public class RoomPhoto extends BaseEntity {
 

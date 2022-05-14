@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.nio.file.Path;
 
 @Embeddable
 @Getter
@@ -20,5 +21,9 @@ public class Photo{
         photo.fileName = fileName;
 
         return photo;
+    }
+
+    public String fullPath() {
+        return Path.of(filePath, fileName).toString();
     }
 }
