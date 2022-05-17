@@ -72,6 +72,8 @@ public class GuestHouseService {
         Long id = Long.valueOf(ghId);
         String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + findGuestHouseNameById(id);
 
+        List<BedRequest> bRequests = new ArrayList<>(beds); // asList로 생성된 ArrayList는 remove 함수를 지원하지 않기 때문
+
         for(RoomRequest room : rooms){
             boolean smoke = room.isSmoke();
             GenderConstraint gConstraint = room.getGenderConstraint();
@@ -101,13 +103,10 @@ public class GuestHouseService {
             List<Bed> bedList = new ArrayList<>();
 
             for(int i=0;i<numOfBed;i++){
-                BedRequest bedRequest = beds.get(0);
-                int floor = bedRequest.getFloor();
-
+                BedRequest bedRequest = bRequests.get(0);
                 Bed bed = Bed.of(bedRequest.getXLocationRatio(), bedRequest.getYLocationRatio(), bedRequest.getFloor());
                 bedList.add(bed);
-
-                beds.remove(0);
+                bRequests.remove(0);
             }
 
             Room r = Room.of(rPhotos, bedList, guestHouse, room.getRoomName(),
@@ -203,32 +202,17 @@ public class GuestHouseService {
         return result;
     }
 
-    public List<BedRequest> jsonToBedRequestList(List<String> beds) {
+    public List<BedRequest> jsonToBedRequestList(String beds) {
         List<BedRequest> result=new ArrayList<>();
-
-        for(String bed : beds){
-            BedRequest bedRequest=new BedRequest();
-
-            bed=bed.replace("{", "");
-            bed=bed.replace("}", "");
-            String[] stringNameValuePairs = bed.split(",");
-
-            for(String nameValuePair : stringNameValuePairs){
-                String[] nameValue = nameValuePair.split(":");
-                if(nameValue[0].equals("\"xLocationRatio\"")){
-
-                    String x = nameValue[1].replace("\"", "");
-                    bedRequest.setXLocationRatio(Double.valueOf(x));
-                }
-                else if(nameValue[0].equals("\"yLocationRatio\"")){
-                    String y = nameValue[1].replace("\"", "");
-                    bedRequest.setYLocationRatio(Double.valueOf(y));
-                }
-                else if(nameValue[0].equals("\"floor\"")){
-                    bedRequest.setFloor(Integer.valueOf(nameValue[1]));
-                }
+        try {
+            if(beds.startsWith("[")) {
+                result = Arrays.asList(objectMapper.readValue(beds, BedRequest[].class));
+            } else {
+                result = new ArrayList<>();
+                result.add(objectMapper.readValue(beds, BedRequest.class));
             }
-            result.add(bedRequest);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
         return result;
     }

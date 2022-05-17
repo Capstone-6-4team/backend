@@ -61,7 +61,7 @@ public class GuestHouseController {
     @PostMapping("/register/guesthouse/room")
     public ResponseEntity<HttpResponseDto> registerRooms(@RequestParam("guestHouseId") String guestHouseId,
                                                          @RequestParam("room") String rooms,
-                                                         @RequestParam("bed") List<String> beds,
+                                                         @RequestParam("bed") String beds,
                                                          @RequestPart("blueprint") List<MultipartFile> blueprints,
                                                          @RequestPart("files") List<MultipartFile> multipartFiles){
         HttpResponseDto body = new HttpResponseDto();
