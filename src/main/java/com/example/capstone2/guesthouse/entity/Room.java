@@ -22,6 +22,13 @@ public class Room extends BaseEntity {
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoomPhoto> roomPhotos = new ArrayList<>();
 
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Bed> beds = new ArrayList<>();
+
+    @Setter
+    @OneToOne(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Blueprint blueprint;
+
     @NotNull
     private String roomName;
 
@@ -36,15 +43,26 @@ public class Room extends BaseEntity {
     @Embedded
     private RoomConstraint roomConstraint;
 
-    public static Room of(GuestHouse guestHouse, String roomName, int capacity, int price,
-                          RoomConstraint roomConstraint){
+    public static Room of(List<RoomPhoto> roomPhotos, List<Bed> bedList, GuestHouse guestHouse, String roomName,
+                          int capacity, int price, RoomConstraint roomConstraint, Blueprint blueprint){
         Room room = new Room();
+
+        for(RoomPhoto roomPhoto : roomPhotos){
+            roomPhoto.setRoom(room);
+        }
+        for(Bed bed : bedList){
+            bed.setRoom(room);
+        }
+        blueprint.setRoom(room);
 
         room.guestHouse=guestHouse;
         room.roomName=roomName;
         room.capacity=capacity;
         room.price=price;
         room.roomConstraint=roomConstraint;
+        room.blueprint=blueprint;
+        room.roomPhotos=roomPhotos;
+        room.beds=bedList;
 
         return room;
     }

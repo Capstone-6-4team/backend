@@ -6,6 +6,8 @@ import com.example.capstone2.guesthouse.entity.*;
 import com.example.capstone2.guesthouse.entity.roomconstraint.GenderConstraint;
 import com.example.capstone2.guesthouse.entity.roomconstraint.RoomConstraint;
 import com.example.capstone2.guesthouse.dto.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,6 +32,7 @@ import java.util.*;
 public class GuestHouseService {
     private final GuestHouseRepository guestHouseRepository;
     private final RoomRepository roomRepository;
+    private final ObjectMapper objectMapper;
 
     @Value("${kakao.api-key}")
     private String GEOCODE_USER_INFO;
@@ -41,9 +44,7 @@ public class GuestHouseService {
 
         HashMap<String, Double> locationInfo = convertAddressToLatitudeLongitude(location);
         Double latitude = locationInfo.get("latitude");
-        System.out.println("latitude = " + latitude);
         Double longitude = locationInfo.get("longitude");
-        System.out.println("longitude = " + longitude);
 
         // 디렉토리 경로 중 tempUser 부분은 유저 구현이 끝나면 실제 유저 이름으로 대체
         String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + ghName;
@@ -66,9 +67,12 @@ public class GuestHouseService {
         return save;
     }
 
-    public void createGuestHouseRooms(List<RoomRequest> rooms, String ghId, List<MultipartFile> files) throws IOException {
+    public void createGuestHouseRooms(List<RoomRequest> rooms, List<BedRequest> beds, String ghId,
+                                      List<MultipartFile> blueprints, List<MultipartFile> files) throws IOException {
         Long id = Long.valueOf(ghId);
         String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + findGuestHouseNameById(id);
+
+        List<BedRequest> bRequests = new ArrayList<>(beds); // asList로 생성된 ArrayList는 remove 함수를 지원하지 않기 때문
 
         for(RoomRequest room : rooms){
             boolean smoke = room.isSmoke();
@@ -76,23 +80,37 @@ public class GuestHouseService {
             RoomConstraint rConstraint = RoomConstraint.of(smoke, gConstraint);
 
             int numOfPhoto = room.getNumOfPhoto();
+            int numOfBed = room.getNumOfBed();
 
             GuestHouse guestHouse = guestHouseRepository.getById(id);
 
-            Room r = Room.of(guestHouse, room.getRoomName(),
-                    room.getCapacity(), room.getPrice(), rConstraint);
+            MultipartFile blueprint = blueprints.get(0);
+            String blueprintId = saveEachPhoto(UPLOAD_PATH, blueprint, "blueprint\\" + room.getRoomName());
+            Blueprint of = Blueprint.of(UPLOAD_PATH, blueprintId);
+            blueprints.remove(0);
 
-            List<RoomPhoto> rPhotos = r.getRoomPhotos();
+            List<RoomPhoto> rPhotos = new ArrayList<>();
 
             for(int i=0;i<numOfPhoto;i++){
                 MultipartFile file = files.get(0);
                 String fileId = saveEachPhoto(UPLOAD_PATH, file, "rooms\\" + room.getRoomName());
-                RoomPhoto rP = RoomPhoto.of(r, UPLOAD_PATH, fileId);
-//                rP.setRoom(r);
+                RoomPhoto rP = RoomPhoto.of(UPLOAD_PATH, fileId);
                 rPhotos.add(rP);
 
                 files.remove(0);
             }
+
+            List<Bed> bedList = new ArrayList<>();
+
+            for(int i=0;i<numOfBed;i++){
+                BedRequest bedRequest = bRequests.get(0);
+                Bed bed = Bed.of(bedRequest.getXLocationRatio(), bedRequest.getYLocationRatio(), bedRequest.getFloor());
+                bedList.add(bed);
+                bRequests.remove(0);
+            }
+
+            Room r = Room.of(rPhotos, bedList, guestHouse, room.getRoomName(),
+                    room.getCapacity(), room.getPrice(), rConstraint, of);
 
             roomRepository.save(r);
         }
@@ -102,8 +120,6 @@ public class GuestHouseService {
         String fileId = (new Date().getTime()) + "" + (new Random().ints(1000, 9999).findAny().getAsInt()); // 현재 날짜와 랜덤 정수값으로 새로운 파일명 만들기
         String originName = file.getOriginalFilename(); // ex) 파일.jpg
         String fileExtension = originName.substring(originName.lastIndexOf(".") + 1); // ex) jpg
-//        originName = originName.substring(0, originName.lastIndexOf(".")); // ex) 파일
-        long fileSize = file.getSize(); // 파일 사이즈
 
         File fileSave = new File(UPLOAD_PATH + "\\" + category, fileId + "." + fileExtension); // ex) fileId.jpg
         if(!fileSave.exists()) { // 폴더가 없을 경우 폴더 만들기
@@ -111,7 +127,6 @@ public class GuestHouseService {
         }
 
         file.transferTo(fileSave); // fileSave의 형태로 파일 저장
-
 
         return fileId;
     }
@@ -127,7 +142,6 @@ public class GuestHouseService {
 
         try{
             // 주소 표기 방식 : "대구광역시 중구 동성로2가 동성로2길 81"
-            // 인코딩한 String을 넘겨야 원하는 데이터를 받을 수 있음
             String address = URLEncoder.encode(addr, "UTF-8");
 
             obj = new URL(GEOCODE_URL+address);
@@ -161,9 +175,6 @@ public class GuestHouseService {
                 String latitude = address1.getString("x");
                 String longitude = address1.getString("y");
 
-//                System.out.println("latitude = " + latitude);
-//                System.out.println("longitude = " + longitude);
-
                 locationInfo.put("latitude", Double.valueOf(latitude));
                 locationInfo.put("longitude", Double.valueOf(longitude));
             }
@@ -175,55 +186,33 @@ public class GuestHouseService {
         return locationInfo;
     }
 
-    public List<RoomRequest> convertStringToListRoomRequest(List<String> rooms) {
-        List<RoomRequest> result=new ArrayList<>();
-
-        for(String room : rooms){
-            RoomRequest roomRequest=new RoomRequest();
-
-//            System.out.println("room = " + room);
-            room=room.replace("{", "");
-            room=room.replace("}", "");
-            String[] stringNameValuePairs = room.split(",");
-
-            for(String nameValuePair : stringNameValuePairs){
-                String[] nameValue = nameValuePair.split(":");
-                if(nameValue[0].equals("\"roomName\"")){
-//                    System.out.println("roomName");
-                    roomRequest.setRoomName(nameValue[1].replace("\"", ""));
-                }
-                else if(nameValue[0].equals("\"capacity\"")){
-//                    System.out.println("capacity");
-                    roomRequest.setCapacity(Integer.valueOf(nameValue[1]));
-                }
-                else if(nameValue[0].equals("\"price\"")){
-//                    System.out.println("price");
-                    roomRequest.setPrice(Integer.valueOf(nameValue[1]));
-                }
-                else if(nameValue[0].equals("\"numOfPhoto\"")){
-//                    System.out.println("numOfPhoto");
-                    roomRequest.setNumOfPhoto(Integer.valueOf(nameValue[1]));
-                }
-                else if(nameValue[0].equals("\"smoke\"")){
-//                    System.out.println("smoke");
-                    roomRequest.setSmoke(Boolean.valueOf(nameValue[1]));
-                }
-                else if(nameValue[0].equals("\"genderConstraint\"")){
-//                    System.out.println("genderConstraint");
-                    if(Integer.valueOf(nameValue[1])==0){
-                        roomRequest.setGenderConstraint(GenderConstraint.MALE_ONLY);
-                    }
-                    else if(Integer.valueOf(nameValue[1])==1){
-                        roomRequest.setGenderConstraint(GenderConstraint.FEMALE_ONLY);
-                    }
-                    else{
-                        roomRequest.setGenderConstraint(GenderConstraint.MIXED);
-                    }
-
-                }
+    public List<RoomRequest> jsonToRoomRequestList(String rooms) {
+        
+        List<RoomRequest> result = null;
+        try {
+            if(rooms.startsWith("[")) {
+                result = Arrays.asList(objectMapper.readValue(rooms, RoomRequest[].class));
+            } else {
+                result = new ArrayList<>();
+                result.add(objectMapper.readValue(rooms, RoomRequest.class));
             }
-//            System.out.println("roomRequest = " + roomRequest);
-            result.add(roomRequest);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public List<BedRequest> jsonToBedRequestList(String beds) {
+        List<BedRequest> result=new ArrayList<>();
+        try {
+            if(beds.startsWith("[")) {
+                result = Arrays.asList(objectMapper.readValue(beds, BedRequest[].class));
+            } else {
+                result = new ArrayList<>();
+                result.add(objectMapper.readValue(beds, BedRequest.class));
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
         return result;
     }

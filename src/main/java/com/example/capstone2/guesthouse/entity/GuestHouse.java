@@ -25,8 +25,7 @@ public class GuestHouse extends BaseEntity {
 
     @Setter
     @OneToOne(mappedBy = "guestHouse", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Thumbnail thumbnail=new Thumbnail();
-//    private GuestHousePhoto thumbnail;
+    private Thumbnail thumbnail;
 
     @OneToMany(mappedBy = "guestHouse", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GuestHousePhoto> guestHousePhotos=new ArrayList<>();
@@ -36,16 +35,6 @@ public class GuestHouse extends BaseEntity {
     @NotNull
     private Double longitude;
     private String location;
-
-//    public static GuestHouse of(String guestHouseName, Double latitude, Double longitude, String location){
-//        GuestHouse guestHouse = new GuestHouse();
-//        guestHouse.guestHouseName=guestHouseName;
-//        guestHouse.latitude=latitude;
-//        guestHouse.longitude=longitude;
-//        guestHouse.location=location;
-//
-//        return guestHouse;
-//    }
 
     public static GuestHouse of(List<GuestHousePhoto> guestHousePhotos, Thumbnail thumbnail,
                                 String guestHouseName, Double latitude, Double longitude, String location){

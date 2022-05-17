@@ -9,6 +9,7 @@ public class RoomRequest {
     private int capacity;
     private int price;
     private int numOfPhoto;
+    private int numOfBed;
     private boolean smoke;
     private GenderConstraint genderConstraint;
 }
