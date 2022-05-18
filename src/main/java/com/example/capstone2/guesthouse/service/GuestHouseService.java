@@ -63,31 +63,35 @@ public class GuestHouseService {
         Double latitude = locationInfo.get("latitude");
         Double longitude = locationInfo.get("longitude");
 
+        GuestHouse guestHouse = GuestHouse.of(ghName, latitude, longitude, location);
         // 디렉토리 경로 중 tempUser 부분은 유저 구현이 끝나면 실제 유저 이름으로 대체
         String path = Path.of(UPLOAD_PATH, Category.GUESTHOUSE.getName(), ghName).toString();
-        List<GuestHousePhoto> ghPhotos = new ArrayList<>();
 
         List<MultipartFile> files=multipartFiles;
         for (MultipartFile file : files){
             String fileId = saveEachPhoto(path, file);
-            GuestHousePhoto ghP = GuestHousePhoto.of(path, fileId);
-            ghPhotos.add(ghP);
+            GuestHousePhoto guestHousePhoto = GuestHousePhoto.of(guestHouse, path, fileId);
+            guestHouse.addPhoto(guestHousePhoto);
         }
 
         path = Path.of(UPLOAD_PATH, Category.THUMBNAIL.getName(), ghName).toString();
         String thumbnailId = saveEachPhoto(path, multipartFile);
-        Thumbnail thumbnail = Thumbnail.of(path, thumbnailId);
+        Thumbnail thumbnail = Thumbnail.of(guestHouse, path, thumbnailId);
+        guestHouse.changeThumbnail(thumbnail);
 
-        GuestHouse gh = GuestHouse.of(ghPhotos, thumbnail, ghName, latitude, longitude, location);
-        guestHouseRepository.save(gh);
 
-        return gh.getId();
+        guestHouseRepository.save(guestHouse);
+
+        return guestHouse.getId();
     }
 
     @Transactional
-    public void createGuestHouseRooms(String roomInfoJson, String ghId, List<MultipartFile> files) throws IOException {
+    public void createGuestHouseRooms(List<RoomRequest> roomRequests, List<BedRequest> beds, String ghId,
+                                      List<MultipartFile> blueprints, List<MultipartFile> files) throws IOException {
         Long id = Long.valueOf(ghId);
-        List<RoomRequest> roomRequests = jsonToRoomRequestList(roomInfoJson);
+        String path = Path.of(UPLOAD_PATH, "rooms", findGuestHouseNameById(id)).toString();
+        List<BedRequest> bRequests = new ArrayList<>(beds); // asList로 생성된 ArrayList는 remove 함수를 지원하지 않기 때문
+
         GuestHouse guestHouse = guestHouseRepository.getById(id);
 
         for(RoomRequest roomRequest : roomRequests){
@@ -96,10 +100,15 @@ public class GuestHouseService {
             RoomConstraint rConstraint = RoomConstraint.of(smoke, gConstraint);
 
             int numOfPhoto = roomRequest.getNumOfPhoto();
+            int numOfBed = roomRequest.getNumOfBed();
+
+            MultipartFile blueprintFile = blueprints.get(0);
+            String blueprintId = saveEachPhoto(path, blueprintFile);
+            Blueprint blueprint = Blueprint.of(UPLOAD_PATH, blueprintId);
+            blueprints.remove(0);
 
             Room room = Room.of(guestHouse, roomRequest.getRoomName(),
-                    roomRequest.getCapacity(), roomRequest.getPrice(), rConstraint);
-            String path = Path.of(UPLOAD_PATH, "rooms", roomRequest.getRoomName()).toAbsolutePath().toString();
+                    roomRequest.getCapacity(), roomRequest.getPrice(), rConstraint, blueprint);
             // 각 방의 사진을 표현하는 방식을 바꾸는 것이 좋을 듯
             for(int i = 0; i < numOfPhoto; i++) {
                 MultipartFile file = files.get(0);
@@ -108,6 +117,14 @@ public class GuestHouseService {
                 room.addPhoto(roomPhoto);
                 files.remove(0);
             }
+
+            for(int i = 0; i < numOfBed; i++){
+                BedRequest bedRequest = bRequests.get(0);
+                Bed bed = Bed.of(room, bedRequest);
+                room.addBed(bed);
+                bRequests.remove(0);
+            }
+
             roomRepository.save(room);
         }
     }
@@ -123,6 +140,7 @@ public class GuestHouseService {
         if(!fileSave.exists()) { // 폴더가 없을 경우 폴더 만들기
             fileSave.mkdirs();
         }
+
         file.transferTo(fileSave); // fileSave의 형태로 파일 저장
 
 
@@ -191,6 +209,7 @@ public class GuestHouseService {
     }
 
     public List<RoomRequest> jsonToRoomRequestList(String rooms) {
+
         List<RoomRequest> result = null;
         try {
             if(rooms.startsWith("[")) {
@@ -198,6 +217,21 @@ public class GuestHouseService {
             } else {
                 result = new ArrayList<>();
                 result.add(objectMapper.readValue(rooms, RoomRequest.class));
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public List<BedRequest> jsonToBedRequestList(String beds) {
+        List<BedRequest> result=new ArrayList<>();
+        try {
+            if(beds.startsWith("[")) {
+                result = Arrays.asList(objectMapper.readValue(beds, BedRequest[].class));
+            } else {
+                result = new ArrayList<>();
+                result.add(objectMapper.readValue(beds, BedRequest.class));
             }
         } catch (JsonProcessingException e) {
             e.printStackTrace();

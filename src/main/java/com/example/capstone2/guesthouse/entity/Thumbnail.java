@@ -12,7 +12,6 @@ import javax.persistence.*;
 @Table(name="thumbnail")
 public class Thumbnail extends BaseEntity {
 
-    @Setter
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "guesthouse_id")
     private GuestHouse guestHouse;
@@ -20,16 +19,9 @@ public class Thumbnail extends BaseEntity {
     @Embedded
     Photo photo;
 
-//    public static Thumbnail of(GuestHouse guestHouse, String filePath, String fileName){
-//        Thumbnail thumbnail = new Thumbnail();
-//        thumbnail.guestHouse = guestHouse; // was comment
-//        thumbnail.photo = Photo.of(filePath, fileName);
-//
-//        return thumbnail;
-//    }
-
-    public static Thumbnail of(String filePath, String fileName){
+    public static Thumbnail of(GuestHouse guestHouse, String filePath, String fileName){
         Thumbnail thumbnail = new Thumbnail();
+        thumbnail.guestHouse = guestHouse;
         thumbnail.photo = Photo.of(filePath, fileName);
 
         return thumbnail;
