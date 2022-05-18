@@ -13,7 +13,6 @@ import javax.persistence.*;
 @Getter
 public class GuestHousePhoto extends BaseEntity {
 
-    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "guesthouse_id")
     private GuestHouse guestHouse;
@@ -21,8 +20,9 @@ public class GuestHousePhoto extends BaseEntity {
     @Embedded
     Photo photo;
 
-    public static GuestHousePhoto of(String filePath, String fileName) {
+    public static GuestHousePhoto of(GuestHouse guestHouse, String filePath, String fileName) {
         GuestHousePhoto guestHousePhoto = new GuestHousePhoto();
+        guestHousePhoto.guestHouse = guestHouse;
         guestHousePhoto.photo = Photo.of(filePath, fileName);
 
         return guestHousePhoto;

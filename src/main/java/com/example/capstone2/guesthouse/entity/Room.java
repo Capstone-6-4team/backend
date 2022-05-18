@@ -43,16 +43,8 @@ public class Room extends BaseEntity {
     @Embedded
     private RoomConstraint roomConstraint;
 
-    public static Room of(List<RoomPhoto> roomPhotos, List<Bed> bedList, GuestHouse guestHouse, String roomName,
-                          int capacity, int price, RoomConstraint roomConstraint, Blueprint blueprint){
+    public static Room of(GuestHouse guestHouse, String roomName, int capacity, int price, RoomConstraint roomConstraint, Blueprint blueprint) {
         Room room = new Room();
-
-        for(RoomPhoto roomPhoto : roomPhotos){
-            roomPhoto.setRoom(room);
-        }
-        for(Bed bed : bedList){
-            bed.setRoom(room);
-        }
         blueprint.setRoom(room);
 
         room.guestHouse=guestHouse;
@@ -61,9 +53,14 @@ public class Room extends BaseEntity {
         room.price=price;
         room.roomConstraint=roomConstraint;
         room.blueprint=blueprint;
-        room.roomPhotos=roomPhotos;
-        room.beds=bedList;
 
         return room;
+    }
+
+    public void addPhoto(RoomPhoto photo) {
+        this.roomPhotos.add(photo);
+    }
+    public void addBed(Bed bed) {
+        this.beds.add(bed);
     }
 }

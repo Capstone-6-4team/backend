@@ -8,14 +8,16 @@ import com.example.capstone2.guesthouse.entity.roomconstraint.RoomConstraint;
 import com.example.capstone2.guesthouse.dto.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.transaction.Transactional;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +26,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.*;
 
 @Transactional
@@ -37,8 +40,22 @@ public class GuestHouseService {
     @Value("${kakao.api-key}")
     private String GEOCODE_USER_INFO;
     private static String GEOCODE_URL = "http://dapi.kakao.com/v2/local/search/address.json?query=";
+    private static final String UPLOAD_PATH = Path.of(System.getProperty("user.dir"),
+            "directory", "photos").toString();
 
-    public GuestHouse createGuestHouse(String ghName,
+    @Getter
+    @AllArgsConstructor
+    private enum Category {
+        ROOM("rooms"),
+        GUESTHOUSE("guesthouse"),
+        THUMBNAIL("thumbnail");
+
+        private String name;
+    }
+
+
+    @Transactional
+    public Long createGuestHouse(String ghName,
                                        String location, List<MultipartFile> multipartFiles,
                                        MultipartFile multipartFile) throws IOException {
 
@@ -46,94 +63,94 @@ public class GuestHouseService {
         Double latitude = locationInfo.get("latitude");
         Double longitude = locationInfo.get("longitude");
 
+        GuestHouse guestHouse = GuestHouse.of(ghName, latitude, longitude, location);
         // 디렉토리 경로 중 tempUser 부분은 유저 구현이 끝나면 실제 유저 이름으로 대체
-        String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + ghName;
-
-        List<GuestHousePhoto> ghPhotos = new ArrayList<>();
+        String path = Path.of(UPLOAD_PATH, Category.GUESTHOUSE.getName(), ghName).toString();
 
         List<MultipartFile> files=multipartFiles;
         for (MultipartFile file : files){
-            String fileId = saveEachPhoto(UPLOAD_PATH, file, "photos");
-            GuestHousePhoto ghP = GuestHousePhoto.of(UPLOAD_PATH, fileId);
-            ghPhotos.add(ghP);
+            String fileId = saveEachPhoto(path, file);
+            GuestHousePhoto guestHousePhoto = GuestHousePhoto.of(guestHouse, path, fileId);
+            guestHouse.addPhoto(guestHousePhoto);
         }
 
-        String thumbnailId = saveEachPhoto(UPLOAD_PATH, multipartFile, "thumbnail");
-        Thumbnail thumbnail = Thumbnail.of(UPLOAD_PATH, thumbnailId);
+        path = Path.of(UPLOAD_PATH, Category.THUMBNAIL.getName(), ghName).toString();
+        String thumbnailId = saveEachPhoto(path, multipartFile);
+        Thumbnail thumbnail = Thumbnail.of(guestHouse, path, thumbnailId);
+        guestHouse.changeThumbnail(thumbnail);
 
-        GuestHouse gh = GuestHouse.of(ghPhotos, thumbnail, ghName, latitude, longitude, location);
-        GuestHouse save = guestHouseRepository.save(gh);
 
-        return save;
+        guestHouseRepository.save(guestHouse);
+
+        return guestHouse.getId();
     }
 
-    public void createGuestHouseRooms(List<RoomRequest> rooms, List<BedRequest> beds, String ghId,
+    @Transactional
+    public void createGuestHouseRooms(List<RoomRequest> roomRequests, List<BedRequest> beds, String ghId,
                                       List<MultipartFile> blueprints, List<MultipartFile> files) throws IOException {
         Long id = Long.valueOf(ghId);
-        String UPLOAD_PATH = System.getProperty("user.dir") + "\\directory\\pictures\\tempUser\\" + findGuestHouseNameById(id);
+        GuestHouse guestHouse = guestHouseRepository.getById(id);
 
+        String path = Path.of(UPLOAD_PATH, "rooms", guestHouse.getGuestHouseName()).toString();
         List<BedRequest> bRequests = new ArrayList<>(beds); // asList로 생성된 ArrayList는 remove 함수를 지원하지 않기 때문
 
-        for(RoomRequest room : rooms){
-            boolean smoke = room.isSmoke();
-            GenderConstraint gConstraint = room.getGenderConstraint();
+
+        for(RoomRequest roomRequest : roomRequests){
+            boolean smoke = roomRequest.isSmoke();
+            GenderConstraint gConstraint = roomRequest.getGenderConstraint();
             RoomConstraint rConstraint = RoomConstraint.of(smoke, gConstraint);
 
-            int numOfPhoto = room.getNumOfPhoto();
-            int numOfBed = room.getNumOfBed();
+            int numOfPhoto = roomRequest.getNumOfPhoto();
+            int numOfBed = roomRequest.getNumOfBed();
 
-            GuestHouse guestHouse = guestHouseRepository.getById(id);
-
-            MultipartFile blueprint = blueprints.get(0);
-            String blueprintId = saveEachPhoto(UPLOAD_PATH, blueprint, "blueprint\\" + room.getRoomName());
-            Blueprint of = Blueprint.of(UPLOAD_PATH, blueprintId);
+            MultipartFile blueprintFile = blueprints.get(0);
+            String blueprintId = saveEachPhoto(path, blueprintFile);
+            Blueprint blueprint = Blueprint.of(UPLOAD_PATH, blueprintId);
             blueprints.remove(0);
 
-            List<RoomPhoto> rPhotos = new ArrayList<>();
-
-            for(int i=0;i<numOfPhoto;i++){
+            Room room = Room.of(guestHouse, roomRequest.getRoomName(),
+                    roomRequest.getCapacity(), roomRequest.getPrice(), rConstraint, blueprint);
+            // 각 방의 사진을 표현하는 방식을 바꾸는 것이 좋을 듯
+            for(int i = 0; i < numOfPhoto; i++) {
                 MultipartFile file = files.get(0);
-                String fileId = saveEachPhoto(UPLOAD_PATH, file, "rooms\\" + room.getRoomName());
-                RoomPhoto rP = RoomPhoto.of(UPLOAD_PATH, fileId);
-                rPhotos.add(rP);
-
+                String fileId = saveEachPhoto(path, file);
+                RoomPhoto roomPhoto = RoomPhoto.of(room, path, fileId);
+                room.addPhoto(roomPhoto);
                 files.remove(0);
             }
 
-            List<Bed> bedList = new ArrayList<>();
-
-            for(int i=0;i<numOfBed;i++){
+            for(int i = 0; i < numOfBed; i++){
                 BedRequest bedRequest = bRequests.get(0);
-                Bed bed = Bed.of(bedRequest.getXLocationRatio(), bedRequest.getYLocationRatio(), bedRequest.getFloor());
-                bedList.add(bed);
+                Bed bed = Bed.of(room, bedRequest);
+                room.addBed(bed);
                 bRequests.remove(0);
             }
 
-            Room r = Room.of(rPhotos, bedList, guestHouse, room.getRoomName(),
-                    room.getCapacity(), room.getPrice(), rConstraint, of);
-
-            roomRepository.save(r);
+            roomRepository.save(room);
         }
     }
 
-    private String saveEachPhoto(String UPLOAD_PATH, MultipartFile file, String category) throws IOException {
+    private String saveEachPhoto(String path, MultipartFile file) throws IOException {
         String fileId = (new Date().getTime()) + "" + (new Random().ints(1000, 9999).findAny().getAsInt()); // 현재 날짜와 랜덤 정수값으로 새로운 파일명 만들기
         String originName = file.getOriginalFilename(); // ex) 파일.jpg
         String fileExtension = originName.substring(originName.lastIndexOf(".") + 1); // ex) jpg
-
-        File fileSave = new File(UPLOAD_PATH + "\\" + category, fileId + "." + fileExtension); // ex) fileId.jpg
+        String fileName = fileId + "." + fileExtension;
+//        originName = originName.substring(0, originName.lastIndexOf(".")); // ex) 파일
+        long fileSize = file.getSize(); // 파일 사이즈
+        File fileSave = new File(path, fileName); // ex) fileId.jpg
         if(!fileSave.exists()) { // 폴더가 없을 경우 폴더 만들기
             fileSave.mkdirs();
         }
 
         file.transferTo(fileSave); // fileSave의 형태로 파일 저장
 
-        return fileId;
+
+        return fileName;
     }
 
-    private String findGuestHouseNameById(Long id) {
-        GuestHouse result = guestHouseRepository.findById(id).orElse(null);
-        return result.getGuestHouseName();
+    @Transactional(readOnly = true)
+    public Room findRoomById(Long roomId) {
+        return roomRepository.getById(roomId);
     }
 
     private HashMap<String, Double> convertAddressToLatitudeLongitude(String addr) throws IOException {
@@ -142,6 +159,7 @@ public class GuestHouseService {
 
         try{
             // 주소 표기 방식 : "대구광역시 중구 동성로2가 동성로2길 81"
+            // 인코딩한 String을 넘겨야 원하는 데이터를 받을 수 있음
             String address = URLEncoder.encode(addr, "UTF-8");
 
             obj = new URL(GEOCODE_URL+address);
@@ -187,7 +205,7 @@ public class GuestHouseService {
     }
 
     public List<RoomRequest> jsonToRoomRequestList(String rooms) {
-        
+
         List<RoomRequest> result = null;
         try {
             if(rooms.startsWith("[")) {

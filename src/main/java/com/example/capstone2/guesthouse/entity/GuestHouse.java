@@ -36,17 +36,8 @@ public class GuestHouse extends BaseEntity {
     private Double longitude;
     private String location;
 
-    public static GuestHouse of(List<GuestHousePhoto> guestHousePhotos, Thumbnail thumbnail,
-                                String guestHouseName, Double latitude, Double longitude, String location){
+    public static GuestHouse of(String guestHouseName, Double latitude, Double longitude, String location){
         GuestHouse guestHouse = new GuestHouse();
-
-        for(GuestHousePhoto ghPhoto : guestHousePhotos){
-            ghPhoto.setGuestHouse(guestHouse);
-        }
-        thumbnail.setGuestHouse(guestHouse);
-
-        guestHouse.guestHousePhotos=guestHousePhotos;
-        guestHouse.thumbnail=thumbnail;
         guestHouse.guestHouseName=guestHouseName;
         guestHouse.latitude=latitude;
         guestHouse.longitude=longitude;
@@ -55,4 +46,11 @@ public class GuestHouse extends BaseEntity {
         return guestHouse;
     }
 
+    public void changeThumbnail(Thumbnail thumbnail) {
+        this.thumbnail = thumbnail;
+    }
+
+    public void addPhoto(GuestHousePhoto guestHousePhoto) {
+        this.guestHousePhotos.add(guestHousePhoto);
+    }
 }

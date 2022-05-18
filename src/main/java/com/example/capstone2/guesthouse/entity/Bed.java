@@ -1,6 +1,7 @@
 package com.example.capstone2.guesthouse.entity;
 
 import com.example.capstone2.common.entity.BaseEntity;
+import com.example.capstone2.guesthouse.dto.BedRequest;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,7 +13,6 @@ import javax.validation.constraints.NotNull;
 @Table(name="bed")
 public class Bed extends BaseEntity {
 
-    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
     private Room room;
@@ -26,11 +26,12 @@ public class Bed extends BaseEntity {
     @NotNull
     private int floor;
 
-    public static Bed of(double x, double y, int f){
+    public static Bed of(Room room, BedRequest bedRequest) {
         Bed bed = new Bed();
-        bed.xLocationRatio=x;
-        bed.yLocationRatio=y;
-        bed.floor=f;
+        bed.room = room;
+        bed.xLocationRatio = bedRequest.getXLocationRatio();
+        bed.yLocationRatio = bedRequest.getYLocationRatio();
+        bed.floor = bedRequest.getFloor();
 
         return bed;
     }
