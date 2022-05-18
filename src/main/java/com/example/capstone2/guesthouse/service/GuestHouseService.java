@@ -15,9 +15,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.transaction.Transactional;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -89,10 +89,11 @@ public class GuestHouseService {
     public void createGuestHouseRooms(List<RoomRequest> roomRequests, List<BedRequest> beds, String ghId,
                                       List<MultipartFile> blueprints, List<MultipartFile> files) throws IOException {
         Long id = Long.valueOf(ghId);
-        String path = Path.of(UPLOAD_PATH, "rooms", findGuestHouseNameById(id)).toString();
+        GuestHouse guestHouse = guestHouseRepository.getById(id);
+
+        String path = Path.of(UPLOAD_PATH, "rooms", guestHouse.getGuestHouseName()).toString();
         List<BedRequest> bRequests = new ArrayList<>(beds); // asList로 생성된 ArrayList는 remove 함수를 지원하지 않기 때문
 
-        GuestHouse guestHouse = guestHouseRepository.getById(id);
 
         for(RoomRequest roomRequest : roomRequests){
             boolean smoke = roomRequest.isSmoke();
@@ -147,14 +148,9 @@ public class GuestHouseService {
         return fileName;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Room findRoomById(Long roomId) {
         return roomRepository.getById(roomId);
-    }
-
-    private String findGuestHouseNameById(Long id) {
-        GuestHouse result = guestHouseRepository.findById(id).orElse(null);
-        return result.getGuestHouseName();
     }
 
     private HashMap<String, Double> convertAddressToLatitudeLongitude(String addr) throws IOException {
