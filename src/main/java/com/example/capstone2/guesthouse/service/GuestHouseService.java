@@ -91,9 +91,7 @@ public class GuestHouseService {
         Long id = Long.valueOf(ghId);
         GuestHouse guestHouse = guestHouseRepository.getById(id);
 
-        String path = Path.of(UPLOAD_PATH, "rooms", guestHouse.getGuestHouseName()).toString();
         List<BedRequest> bRequests = new ArrayList<>(beds); // asList로 생성된 ArrayList는 remove 함수를 지원하지 않기 때문
-
 
         for(RoomRequest roomRequest : roomRequests){
             boolean smoke = roomRequest.isSmoke();
@@ -103,18 +101,24 @@ public class GuestHouseService {
             int numOfPhoto = roomRequest.getNumOfPhoto();
             int numOfBed = roomRequest.getNumOfBed();
 
+            String blueprintPath = Path.of(UPLOAD_PATH, "blueprint", guestHouse.getGuestHouseName(),
+                    roomRequest.getRoomName()).toString();
+
             MultipartFile blueprintFile = blueprints.get(0);
-            String blueprintId = saveEachPhoto(path, blueprintFile);
-            Blueprint blueprint = Blueprint.of(UPLOAD_PATH, blueprintId);
+            String blueprintId = saveEachPhoto(blueprintPath, blueprintFile);
+            Blueprint blueprint = Blueprint.of(blueprintPath, blueprintId);
             blueprints.remove(0);
 
             Room room = Room.of(guestHouse, roomRequest.getRoomName(),
                     roomRequest.getCapacity(), roomRequest.getPrice(), rConstraint, blueprint);
+
+            String roomPhotosPath = Path.of(UPLOAD_PATH, "roomPhotos", guestHouse.getGuestHouseName(),
+                    roomRequest.getRoomName()).toString();
             // 각 방의 사진을 표현하는 방식을 바꾸는 것이 좋을 듯
             for(int i = 0; i < numOfPhoto; i++) {
                 MultipartFile file = files.get(0);
-                String fileId = saveEachPhoto(path, file);
-                RoomPhoto roomPhoto = RoomPhoto.of(room, path, fileId);
+                String fileId = saveEachPhoto(roomPhotosPath, file);
+                RoomPhoto roomPhoto = RoomPhoto.of(room, roomPhotosPath, fileId);
                 room.addPhoto(roomPhoto);
                 files.remove(0);
             }

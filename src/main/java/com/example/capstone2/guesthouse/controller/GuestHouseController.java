@@ -32,8 +32,10 @@ public class GuestHouseController {
         HttpHeaders headers= new HttpHeaders();
         headers.setContentType(new MediaType("application", "json", Charset.forName("UTF-8")));
 
+        Long guestHouseId=null;
+
         try{
-            guestHouseService.createGuestHouse(gName, location, files, thumbnail);
+            guestHouseId = guestHouseService.createGuestHouse(gName, location, files, thumbnail);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -44,7 +46,7 @@ public class GuestHouseController {
 
             return ResponseEntity.internalServerError().build();
         }
-        return ResponseEntity.ok("House registration successfully completed!");
+        return ResponseEntity.ok(String.valueOf(guestHouseId));
     }
 
     @PostMapping("/register/guesthouse/room")
@@ -71,14 +73,4 @@ public class GuestHouseController {
 
         return ResponseEntity.ok("Room list registration successfully completed!");
     }
-
-//    @GetMapping("/guesthouse_list")
-//    public ResponseEntity<HttpResponseDto> getEveryGuestHouse(){
-//
-//        HttpResponseDto body = new HttpResponseDto();
-//        HttpHeaders headers= new HttpHeaders();
-//        headers.setContentType(new MediaType("application", "json", Charset.forName("UTF-8")));
-//
-//
-//    }
 }
