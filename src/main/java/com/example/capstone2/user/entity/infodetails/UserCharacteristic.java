@@ -21,6 +21,6 @@ public class UserCharacteristic {
 
     private boolean drinking;
 
-    private int bedTime;
-    private int wakeUpTime;
+    @Convert(converter = SleepPattern.Converter.class)
+    private SleepPattern sleepPattern;
 }
