@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Getter
 public class ReservationCreateRequest {
-    Long roomId;
+    Long bedId;
 //    @DateTimeFormat(pattern = "yyyy-mm-dd")
     LocalDate checkInDate;
 //    @DateTimeFormat(pattern = "yyyy-mm-dd")

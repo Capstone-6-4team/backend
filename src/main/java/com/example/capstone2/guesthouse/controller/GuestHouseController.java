@@ -2,6 +2,7 @@ package com.example.capstone2.guesthouse.controller;
 
 import com.example.capstone2.common.entity.HttpResponseDto;
 import com.example.capstone2.guesthouse.dto.BedRequest;
+import com.example.capstone2.guesthouse.dto.GuesthouseRegisterResponse;
 import com.example.capstone2.guesthouse.entity.GuestHouse;
 import com.example.capstone2.guesthouse.service.GuestHouseService;
 import com.example.capstone2.guesthouse.dto.RoomRequest;
@@ -9,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,39 +26,51 @@ public class GuestHouseController {
     private final GuestHouseService guestHouseService;
 
     @PostMapping("/register/guesthouse")
-    public ResponseEntity<String> registerGuesthouse(@RequestParam("guestHouseName") String gName,
-                                                     @RequestParam("location") String location,
-                                                     @RequestPart("files") List<MultipartFile> files,
-                                                    @RequestPart("thumbnail") MultipartFile thumbnail){
-        GuestHouse guestHouse=null;
-        HttpResponseDto body = new HttpResponseDto();
-        HttpHeaders headers= new HttpHeaders();
-        headers.setContentType(new MediaType("application", "json", Charset.forName("UTF-8")));
+    @PreAuthorize("isAuthenticated() and hasRole('ROLE_HOST')")
+    public ResponseEntity<GuesthouseRegisterResponse> registerGuesthouse(Authentication authentication,
+                                                                         @RequestParam("guestHouseName") String gName,
+                                                                         @RequestParam("location") String location,
+                                                                         @RequestParam("specificLocation") String specificLocation,
+                                                                         @RequestPart("files") List<MultipartFile> files,
+                                                                         @RequestPart("thumbnail") MultipartFile thumbnail){
+
+        Long guestHouseId=null;
+        GuesthouseRegisterResponse response=null;
+
+        String email = authentication.getName();
 
         try{
-            guestHouseService.createGuestHouse(gName, location, files, thumbnail);
+            guestHouseId = guestHouseService.createGuestHouse(email, gName, location, specificLocation, files, thumbnail);
         }
         catch(Exception e){
             e.printStackTrace();
-            if(e instanceof IllegalStateException)
-                return ResponseEntity.badRequest().body("Already registered house!");
-            else if(e instanceof IOException)
-                return ResponseEntity.badRequest().body("Image file save rejected!");
+            if(e instanceof IllegalStateException){
+                response = GuesthouseRegisterResponse.from(null, "Already registered house!");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            else if(e instanceof IOException){
+                response = GuesthouseRegisterResponse.from(null, "Image file save rejected!");
+                return ResponseEntity.badRequest().body(response);
+            }
 
             return ResponseEntity.internalServerError().build();
         }
-        return ResponseEntity.ok("House registration successfully completed!");
+
+        response = GuesthouseRegisterResponse.from(String.valueOf(guestHouseId), "GuestHouse registration complete");
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register/guesthouse/room")
-    public ResponseEntity<String> registerRooms(@RequestParam("guestHouseId") String guestHouseId,
-                                                         @RequestParam("room") String rooms,
-                                                         @RequestParam("bed") String beds,
-                                                         @RequestPart("blueprint") List<MultipartFile> blueprints,
-                                                         @RequestPart("files") List<MultipartFile> multipartFiles){
-        HttpResponseDto body = new HttpResponseDto();
-        HttpHeaders headers= new HttpHeaders();
-        headers.setContentType(new MediaType("application", "json", Charset.forName("UTF-8")));
+    @PreAuthorize("isAuthenticated() and hasRole('ROLE_HOST')")
+    public ResponseEntity<String> registerRooms(Authentication authentication,
+                                                @RequestParam("guestHouseId") String guestHouseId,
+                                                @RequestParam("room") String rooms,
+                                                @RequestParam("bed") String beds,
+                                                @RequestPart("blueprint") List<MultipartFile> blueprints,
+                                                @RequestPart("files") List<MultipartFile> multipartFiles){
+
+        String email = authentication.getName();
 
         List<RoomRequest> roomRequests = guestHouseService.jsonToRoomRequestList(rooms);
         List<BedRequest> bedRequests = guestHouseService.jsonToBedRequestList(beds);
@@ -71,14 +86,4 @@ public class GuestHouseController {
 
         return ResponseEntity.ok("Room list registration successfully completed!");
     }
-
-//    @GetMapping("/guesthouse_list")
-//    public ResponseEntity<HttpResponseDto> getEveryGuestHouse(){
-//
-//        HttpResponseDto body = new HttpResponseDto();
-//        HttpHeaders headers= new HttpHeaders();
-//        headers.setContentType(new MediaType("application", "json", Charset.forName("UTF-8")));
-//
-//
-//    }
 }

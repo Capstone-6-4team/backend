@@ -11,7 +11,7 @@ public class RoommateInfoDto {
     private boolean smoke;
     private boolean drinking;
     private Gender gender;
-    private int bedNumber;
+    private Long bedId;
     private String nationality;
     private MBTI mbti;
     private String sleepPattern;
@@ -22,7 +22,7 @@ public class RoommateInfoDto {
         dto.smoke = characteristic.isSmoke();
         dto.drinking = characteristic.isDrinking();
         dto.gender = characteristic.getGender();
-        dto.bedNumber = 0;
+        dto.bedId = reservation.getBed().getId();
         dto.nationality = characteristic.getNationality().getCode();
         dto.mbti = characteristic.getMbti();
         dto.sleepPattern = characteristic.getSleepPattern().getName();
