@@ -36,6 +36,7 @@ public class RoomController {
     }
 
     @GetMapping("/{guestHouseId}/roomList/{pageNum}/{pageSize}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Page<RoomResponse>> getRooms(@PathVariable Long guestHouseId,
                                                        @PathVariable int pageNum, @PathVariable int pageSize){
 

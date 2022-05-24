@@ -1,5 +1,6 @@
 package com.example.capstone2.reservation.service;
 
+import com.example.capstone2.guesthouse.entity.Bed;
 import com.example.capstone2.guesthouse.entity.Room;
 import com.example.capstone2.guesthouse.service.GuestHouseService;
 import com.example.capstone2.reservation.dao.ReservationRepository;
@@ -27,15 +28,17 @@ public class ReservationService {
     @Transactional
     public void create(String email, ReservationCreateRequest request) {
         User user = userService.findByEmail(email);
-        Room room = guestHouseService.findRoomById(request.getRoomId());
+        Bed bed = guestHouseService.findBedById(request.getBedId());
+        Room room = bed.getRoom();
 
-        Reservation reservation = Reservation.of(user, room, request.getCheckInDate(), request.getCheckOutDate());
+        Reservation reservation = Reservation.of(user, room, bed, request.getCheckInDate(), request.getCheckOutDate());
         reservationRepository.save(reservation);
     }
 
     @Transactional(readOnly = true)
     public List<RoommateInfoDto> getRoommateInfo(RoommateInfoRequest request) {
         Room room = guestHouseService.findRoomById(request.getRoomId());
+
         List<Reservation> related = reservationRepository.findAllRelated(room, request.getCheckInDate());
         List<RoommateInfoDto> roommateInfoDtos = related.stream()
                 .map(RoommateInfoDto::from)
