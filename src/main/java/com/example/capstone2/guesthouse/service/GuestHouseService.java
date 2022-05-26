@@ -1,5 +1,6 @@
 package com.example.capstone2.guesthouse.service;
 
+import com.example.capstone2.chat.service.ChatRoomService;
 import com.example.capstone2.guesthouse.dao.GuestHouseRepository;
 import com.example.capstone2.guesthouse.dao.RoomRepository;
 import com.example.capstone2.guesthouse.entity.*;
@@ -35,6 +36,7 @@ import java.util.*;
 public class GuestHouseService {
     private final GuestHouseRepository guestHouseRepository;
     private final RoomRepository roomRepository;
+    private final ChatRoomService chatRoomService;
     private final ObjectMapper objectMapper;
 
     @Value("${kakao.api-key}")
@@ -94,7 +96,6 @@ public class GuestHouseService {
         String path = Path.of(UPLOAD_PATH, "rooms", guestHouse.getGuestHouseName()).toString();
         List<BedRequest> bRequests = new ArrayList<>(beds); // asList로 생성된 ArrayList는 remove 함수를 지원하지 않기 때문
 
-
         for(RoomRequest roomRequest : roomRequests){
             boolean smoke = roomRequest.isSmoke();
             GenderConstraint gConstraint = roomRequest.getGenderConstraint();
@@ -127,6 +128,8 @@ public class GuestHouseService {
             }
 
             roomRepository.save(room);
+            chatRoomService.createPublicChatRoom(room);
+            chatRoomService.createdReservedChatRoom(room);
         }
     }
 
