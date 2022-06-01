@@ -2,6 +2,7 @@ package com.example.capstone2.guesthouse.controller;
 
 import com.example.capstone2.common.entity.HttpResponseDto;
 import com.example.capstone2.guesthouse.dto.BedRequest;
+import com.example.capstone2.guesthouse.dto.GuestHouseDto;
 import com.example.capstone2.guesthouse.dto.GuesthouseRegisterResponse;
 import com.example.capstone2.guesthouse.entity.GuestHouse;
 import com.example.capstone2.guesthouse.service.GuestHouseService;
@@ -85,5 +86,12 @@ public class GuestHouseController {
         }
 
         return ResponseEntity.ok("Room list registration successfully completed!");
+    }
+
+    @GetMapping("/guesthouse/location")
+    public ResponseEntity<List<GuestHouseDto>> findGuestHousesByCity(@RequestParam("city")String city){
+        List<GuestHouseDto> result = guestHouseService.findRandomGuestHouseListByCity(city);
+
+        return ResponseEntity.ok(result);
     }
 }

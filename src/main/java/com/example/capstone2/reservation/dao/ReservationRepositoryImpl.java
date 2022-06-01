@@ -2,6 +2,7 @@ package com.example.capstone2.reservation.dao;
 
 import com.example.capstone2.guesthouse.entity.Room;
 import com.example.capstone2.reservation.entitiy.Reservation;
+import com.example.capstone2.user.entity.User;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
@@ -26,5 +27,14 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
                 .innerJoin(reservation.user, user)
                 .fetchJoin()
                 .fetch();
+    }
+
+    public boolean existsByUser(User usr, LocalDate date) {
+        return queryFactory.selectFrom(reservation)
+                .where(reservation.user.eq(usr)
+                        .and(reservation.checkInDate.eq(date)))
+                .innerJoin(reservation.user, user)
+                .fetchJoin()
+                .fetchFirst() != null;
     }
 }

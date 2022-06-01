@@ -1,10 +1,12 @@
 package com.example.capstone2.user.controller;
 
 import com.example.capstone2.user.dto.RegisterRequest;
+import com.example.capstone2.user.entity.User;
 import com.example.capstone2.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,5 +25,13 @@ public class UserController {
 
         userService.create(registerRequest);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/name")
+    public ResponseEntity<String> getUserName(Authentication authentication){
+        String email = authentication.getName();
+        String userName = userService.findByEmail(email).getName();
+
+        return ResponseEntity.ok(userName);
     }
 }
