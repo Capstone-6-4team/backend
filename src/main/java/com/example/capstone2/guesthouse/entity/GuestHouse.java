@@ -1,6 +1,7 @@
 package com.example.capstone2.guesthouse.entity;
 
 import com.example.capstone2.common.entity.BaseEntity;
+import com.example.capstone2.user.entity.User;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,10 +19,9 @@ public class GuestHouse extends BaseEntity {
 
     private String guestHouseName;
 
-//    user 구현 완료된 후 주석 해제
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "user_id", nullable = false)
-//    private User host;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User host;
 
     @Setter
     @OneToOne(mappedBy = "guestHouse", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -34,14 +34,25 @@ public class GuestHouse extends BaseEntity {
     private Double latitude;
     @NotNull
     private Double longitude;
-    private String location;
 
-    public static GuestHouse of(String guestHouseName, Double latitude, Double longitude, String location){
+    private String city;
+    private String district;
+    private String roadName;
+    private int buildingNum;
+    private String specificLocation;
+
+    public static GuestHouse of(User user, String guestHouseName, Double latitude, Double longitude,
+                                String city, String district, String roadName, int buildingNum, String specificLocation){
         GuestHouse guestHouse = new GuestHouse();
+        guestHouse.host=user;
         guestHouse.guestHouseName=guestHouseName;
         guestHouse.latitude=latitude;
         guestHouse.longitude=longitude;
-        guestHouse.location=location;
+        guestHouse.city=city;
+        guestHouse.district=district;
+        guestHouse.roadName=roadName;
+        guestHouse.buildingNum=buildingNum;
+        guestHouse.specificLocation=specificLocation;
 
         return guestHouse;
     }

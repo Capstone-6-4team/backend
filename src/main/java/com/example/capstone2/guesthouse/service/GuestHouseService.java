@@ -1,12 +1,15 @@
 package com.example.capstone2.guesthouse.service;
 
 import com.example.capstone2.chat.service.ChatRoomService;
+import com.example.capstone2.guesthouse.dao.BedRepository;
 import com.example.capstone2.guesthouse.dao.GuestHouseRepository;
 import com.example.capstone2.guesthouse.dao.RoomRepository;
 import com.example.capstone2.guesthouse.entity.*;
 import com.example.capstone2.guesthouse.entity.roomconstraint.GenderConstraint;
 import com.example.capstone2.guesthouse.entity.roomconstraint.RoomConstraint;
 import com.example.capstone2.guesthouse.dto.*;
+import com.example.capstone2.user.entity.User;
+import com.example.capstone2.user.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
@@ -29,6 +32,8 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Transactional
 @RequiredArgsConstructor
@@ -37,7 +42,9 @@ public class GuestHouseService {
     private final GuestHouseRepository guestHouseRepository;
     private final RoomRepository roomRepository;
     private final ChatRoomService chatRoomService;
+    private final BedRepository bedRepository;
     private final ObjectMapper objectMapper;
+    private final UserService userService;
 
     @Value("${kakao.api-key}")
     private String GEOCODE_USER_INFO;
@@ -57,15 +64,22 @@ public class GuestHouseService {
 
 
     @Transactional
-    public Long createGuestHouse(String ghName,
-                                       String location, List<MultipartFile> multipartFiles,
+    public Long createGuestHouse(String email, String ghName,
+                                       String location, String specificLocation, List<MultipartFile> multipartFiles,
                                        MultipartFile multipartFile) throws IOException {
 
-        HashMap<String, Double> locationInfo = convertAddressToLatitudeLongitude(location);
-        Double latitude = locationInfo.get("latitude");
-        Double longitude = locationInfo.get("longitude");
+        User user = userService.findByEmail(email);
 
-        GuestHouse guestHouse = GuestHouse.of(ghName, latitude, longitude, location);
+        HashMap<String, String> locationInfo = convertAddressToLatitudeLongitude(location);
+
+        Double latitude = Double.valueOf(locationInfo.get("latitude"));
+        Double longitude = Double.valueOf(locationInfo.get("longitude"));
+        String regionName1 = locationInfo.get("city");
+        String regionName2 = locationInfo.get("district");
+        String roadName = locationInfo.get("roadName");
+        int buildingNum = Integer.valueOf(locationInfo.get("buildingNum"));
+
+        GuestHouse guestHouse = GuestHouse.of(user, ghName, latitude, longitude, regionName1, regionName2, roadName, buildingNum, specificLocation);
         // 디렉토리 경로 중 tempUser 부분은 유저 구현이 끝나면 실제 유저 이름으로 대체
         String path = Path.of(UPLOAD_PATH, Category.GUESTHOUSE.getName(), ghName).toString();
 
@@ -81,7 +95,6 @@ public class GuestHouseService {
         Thumbnail thumbnail = Thumbnail.of(guestHouse, path, thumbnailId);
         guestHouse.changeThumbnail(thumbnail);
 
-
         guestHouseRepository.save(guestHouse);
 
         return guestHouse.getId();
@@ -90,10 +103,10 @@ public class GuestHouseService {
     @Transactional
     public void createGuestHouseRooms(List<RoomRequest> roomRequests, List<BedRequest> beds, String ghId,
                                       List<MultipartFile> blueprints, List<MultipartFile> files) throws IOException {
+
         Long id = Long.valueOf(ghId);
         GuestHouse guestHouse = guestHouseRepository.getById(id);
 
-        String path = Path.of(UPLOAD_PATH, "rooms", guestHouse.getGuestHouseName()).toString();
         List<BedRequest> bRequests = new ArrayList<>(beds); // asList로 생성된 ArrayList는 remove 함수를 지원하지 않기 때문
 
         for(RoomRequest roomRequest : roomRequests){
@@ -104,18 +117,24 @@ public class GuestHouseService {
             int numOfPhoto = roomRequest.getNumOfPhoto();
             int numOfBed = roomRequest.getNumOfBed();
 
+            String blueprintPath = Path.of(UPLOAD_PATH, "blueprint", guestHouse.getGuestHouseName(),
+                    roomRequest.getRoomName()).toString();
+
             MultipartFile blueprintFile = blueprints.get(0);
-            String blueprintId = saveEachPhoto(path, blueprintFile);
-            Blueprint blueprint = Blueprint.of(UPLOAD_PATH, blueprintId);
+            String blueprintId = saveEachPhoto(blueprintPath, blueprintFile);
+            Blueprint blueprint = Blueprint.of(blueprintPath, blueprintId);
             blueprints.remove(0);
 
             Room room = Room.of(guestHouse, roomRequest.getRoomName(),
                     roomRequest.getCapacity(), roomRequest.getPrice(), rConstraint, blueprint);
+
+            String roomPhotosPath = Path.of(UPLOAD_PATH, "roomPhotos", guestHouse.getGuestHouseName(),
+                    roomRequest.getRoomName()).toString();
             // 각 방의 사진을 표현하는 방식을 바꾸는 것이 좋을 듯
             for(int i = 0; i < numOfPhoto; i++) {
                 MultipartFile file = files.get(0);
-                String fileId = saveEachPhoto(path, file);
-                RoomPhoto roomPhoto = RoomPhoto.of(room, path, fileId);
+                String fileId = saveEachPhoto(roomPhotosPath, file);
+                RoomPhoto roomPhoto = RoomPhoto.of(room, roomPhotosPath, fileId);
                 room.addPhoto(roomPhoto);
                 files.remove(0);
             }
@@ -156,9 +175,24 @@ public class GuestHouseService {
         return roomRepository.getById(roomId);
     }
 
-    private HashMap<String, Double> convertAddressToLatitudeLongitude(String addr) throws IOException {
+    @Transactional(readOnly = true)
+    public Bed findBedById(Long bedId) {
+        return bedRepository.getById(bedId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GuestHouseDto> findRandomGuestHouseListByCity(String city){
+        List<GuestHouse> guestHouseListByCity = guestHouseRepository.findByCity(city);
+        List<GuestHouseDto> dtoList = guestHouseListByCity.stream().map(GuestHouseDto::from).collect(Collectors.toList());
+
+        Collections.shuffle(dtoList); // randomly shuffle elements
+
+        return dtoList.stream().limit(10).collect(Collectors.toList());
+    }
+
+    private HashMap<String, String> convertAddressToLatitudeLongitude(String addr) throws IOException {
         URL obj;
-        HashMap<String, Double> locationInfo=new HashMap<>();
+        HashMap<String, String> locationInfo=new HashMap<>();
 
         try{
             // 주소 표기 방식 : "대구광역시 중구 동성로2가 동성로2길 81"
@@ -189,15 +223,25 @@ public class GuestHouseService {
             JSONObject jObject = new JSONObject(response.toString());
             JSONArray documents = jObject.getJSONArray("documents");
 
+            System.out.println("documents = " + documents);
+
             for(int i=0;i<documents.length();i++){
                 JSONObject object = documents.getJSONObject(i);
-                JSONObject address1 = object.getJSONObject("address");
+                JSONObject address1 = object.getJSONObject("road_address");
 
                 String latitude = address1.getString("x");
                 String longitude = address1.getString("y");
+                String regionName1 = address1.getString("region_1depth_name");
+                String regionName2 = address1.getString("region_2depth_name");
+                String roadName = address1.getString("road_name");
+                String buildingNum = address1.getString("main_building_no");
 
-                locationInfo.put("latitude", Double.valueOf(latitude));
-                locationInfo.put("longitude", Double.valueOf(longitude));
+                locationInfo.put("latitude", latitude);
+                locationInfo.put("longitude", longitude);
+                locationInfo.put("city", regionName1);
+                locationInfo.put("district", regionName2);
+                locationInfo.put("roadName", roadName);
+                locationInfo.put("buildingNum", buildingNum);
             }
 
             return locationInfo;

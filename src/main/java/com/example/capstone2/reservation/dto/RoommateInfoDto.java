@@ -8,10 +8,11 @@ import lombok.Getter;
 
 @Getter
 public class RoommateInfoDto {
+    private String name;
     private boolean smoke;
     private boolean drinking;
     private Gender gender;
-    private int bedNumber;
+    private Long bedId;
     private String nationality;
     private MBTI mbti;
     private String sleepPattern;
@@ -19,10 +20,11 @@ public class RoommateInfoDto {
     public static RoommateInfoDto from(Reservation reservation) {
         UserCharacteristic characteristic = reservation.getUser().getCharacteristic();
         RoommateInfoDto dto = new RoommateInfoDto();
+        dto.name = reservation.getUser().getName();
         dto.smoke = characteristic.isSmoke();
         dto.drinking = characteristic.isDrinking();
         dto.gender = characteristic.getGender();
-        dto.bedNumber = 0;
+        dto.bedId = reservation.getBed().getId();
         dto.nationality = characteristic.getNationality().getCode();
         dto.mbti = characteristic.getMbti();
         dto.sleepPattern = characteristic.getSleepPattern().getName();
