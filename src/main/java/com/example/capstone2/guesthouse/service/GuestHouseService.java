@@ -1,5 +1,6 @@
 package com.example.capstone2.guesthouse.service;
 
+import com.example.capstone2.chat.service.ChatRoomService;
 import com.example.capstone2.guesthouse.dao.BedRepository;
 import com.example.capstone2.guesthouse.dao.GuestHouseRepository;
 import com.example.capstone2.guesthouse.dao.RoomRepository;
@@ -32,7 +33,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Transactional
 @RequiredArgsConstructor
@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 public class GuestHouseService {
     private final GuestHouseRepository guestHouseRepository;
     private final RoomRepository roomRepository;
+    private final ChatRoomService chatRoomService;
     private final BedRepository bedRepository;
     private final ObjectMapper objectMapper;
     private final UserService userService;
@@ -145,6 +146,8 @@ public class GuestHouseService {
             }
 
             roomRepository.save(room);
+            chatRoomService.createPublicChatRoom(room);
+            chatRoomService.createdReservedChatRoom(room);
         }
     }
 
@@ -184,6 +187,14 @@ public class GuestHouseService {
         Collections.shuffle(dtoList); // randomly shuffle elements
 
         return dtoList.stream().limit(10).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<GuestHouseListDto> findAllByAddress(String city, String district) {
+        List<GuestHouse> guestHouseList = guestHouseRepository.findAllByCityAndDistrictStartsWith(city, district);
+        return guestHouseList.stream()
+                .map(GuestHouseListDto::from)
+                .collect(Collectors.toList());
     }
 
     private HashMap<String, String> convertAddressToLatitudeLongitude(String addr) throws IOException {
@@ -264,9 +275,9 @@ public class GuestHouseService {
     }
 
     public List<BedRequest> jsonToBedRequestList(String beds) {
-        List<BedRequest> result=new ArrayList<>();
+        List<BedRequest> result = new ArrayList<>();
         try {
-            if(beds.startsWith("[")) {
+            if (beds.startsWith("[")) {
                 result = Arrays.asList(objectMapper.readValue(beds, BedRequest[].class));
             } else {
                 result = new ArrayList<>();

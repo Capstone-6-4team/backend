@@ -64,4 +64,14 @@ public class GuestHouse extends BaseEntity {
     public void addPhoto(GuestHousePhoto guestHousePhoto) {
         this.guestHousePhotos.add(guestHousePhoto);
     }
+    public String getFullAddress() {
+        List<String> address = new ArrayList<>();
+        address.add(getCity());
+        address.add(getDistrict());
+        address.add(getRoadName());
+        address.add(getRoadName());
+        address.add(Integer.toString(getBuildingNum()));
+        address.add(getSpecificLocation());
+        return String.join(" ", address);
+    }
 }

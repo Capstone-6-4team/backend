@@ -1,12 +1,9 @@
 package com.example.capstone2.guesthouse.controller;
 
 import com.example.capstone2.common.entity.HttpResponseDto;
-import com.example.capstone2.guesthouse.dto.BedRequest;
-import com.example.capstone2.guesthouse.dto.GuestHouseDto;
-import com.example.capstone2.guesthouse.dto.GuesthouseRegisterResponse;
+import com.example.capstone2.guesthouse.dto.*;
 import com.example.capstone2.guesthouse.entity.GuestHouse;
 import com.example.capstone2.guesthouse.service.GuestHouseService;
-import com.example.capstone2.guesthouse.dto.RoomRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -93,5 +90,10 @@ public class GuestHouseController {
         List<GuestHouseDto> result = guestHouseService.findRandomGuestHouseListByCity(city);
 
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<List<GuestHouseListDto>> findAllByAddress(@RequestParam String city, @RequestParam String district) {
+        return ResponseEntity.ok(guestHouseService.findAllByAddress(city, district));
     }
 }

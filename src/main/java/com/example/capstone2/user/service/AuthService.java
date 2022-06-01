@@ -4,6 +4,7 @@ import com.example.capstone2.common.jwt.JwtService;
 import com.example.capstone2.common.response.ApiResponse;
 import com.example.capstone2.user.dto.LoginRequest;
 import com.example.capstone2.user.dto.LoginResponse;
+import com.example.capstone2.user.entity.User;
 import com.example.capstone2.user.entity.UserType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
+    private final UserService userService;
     private final JwtService jwtService;
 
     @Transactional(readOnly = true)
@@ -26,7 +28,7 @@ public class AuthService {
 
         Authentication authenticate = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
         String token = jwtService.generateToken(authenticate);
-
-        return new LoginResponse(token);
+        User user = userService.findByEmail(authenticate.getName());
+        return new LoginResponse(token, user.getId());
     }
 }

@@ -50,7 +50,7 @@ public class RoomService {
 
             String filePath = room.getRoomPhotos().get(0).getPhoto().getFilePath();
             String fileName = room.getRoomPhotos().get(0).getPhoto().getFileName();
-            String fileDir = filePath + "\\" + fileName;
+            String fileDir = Path.of(filePath, fileName).toString();
             Path path = Paths.get(fileDir);
 
             try {

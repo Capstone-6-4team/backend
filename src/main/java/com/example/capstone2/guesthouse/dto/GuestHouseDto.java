@@ -28,9 +28,8 @@ public class GuestHouseDto {
         guestHouseDto.guestHouseName=guestHouse.getGuestHouseName();
         guestHouseDto.city=guestHouse.getCity();
 
-        String filePath = guestHouse.getThumbnail().getPhoto().getFilePath();
-        String fileName = guestHouse.getThumbnail().getPhoto().getFileName();
-        String fileDir = filePath + "\\" + fileName;
+
+        String fileDir = guestHouse.getThumbnail().getPhoto().fullPath();
 
         Path path = Paths.get(fileDir);
 

@@ -7,4 +7,5 @@ import lombok.Getter;
 @Getter
 public class LoginResponse {
     private String token;
+    private Long id;
 }
