@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface GuestHouseRepository extends JpaRepository<GuestHouse, Long> {
     List<GuestHouse> findByCity(String city);
+    List<GuestHouse> findAllByCityAndDistrictStartsWith(String city, String district);
 }

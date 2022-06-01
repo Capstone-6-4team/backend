@@ -2,8 +2,6 @@ package com.example.capstone2.chat.service;
 
 import com.example.capstone2.chat.dao.ChatMessageRepository;
 import com.example.capstone2.chat.dao.ChatRoomRepository;
-import com.example.capstone2.chat.dao.PublicChatRoomRepository;
-import com.example.capstone2.chat.dao.ReservedChatRoomRepository;
 import com.example.capstone2.chat.dto.ChatDto;
 import com.example.capstone2.chat.dto.ChatRoomInfoDto;
 import com.example.capstone2.chat.entity.ChatMessage;
@@ -51,7 +49,7 @@ public class ChatMessageService {
 
     @Transactional(readOnly = true)
     public List<ChatDto> getPrevChatList(Long chatRoomId) {
-        return chatMessageRepository.findAllByChatRoomId(chatRoomId).stream()
+        return chatMessageRepository.findAllByChatRoomIdOrderByCreatedDate(chatRoomId).stream()
                 .map(ChatDto::from)
                 .collect(Collectors.toList());
     }

@@ -33,7 +33,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Transactional
 @RequiredArgsConstructor
@@ -190,6 +189,14 @@ public class GuestHouseService {
         return dtoList.stream().limit(10).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<GuestHouseListDto> findAllByAddress(String city, String district) {
+        List<GuestHouse> guestHouseList = guestHouseRepository.findAllByCityAndDistrictStartsWith(city, district);
+        return guestHouseList.stream()
+                .map(GuestHouseListDto::from)
+                .collect(Collectors.toList());
+    }
+
     private HashMap<String, String> convertAddressToLatitudeLongitude(String addr) throws IOException {
         URL obj;
         HashMap<String, String> locationInfo=new HashMap<>();
@@ -268,9 +275,9 @@ public class GuestHouseService {
     }
 
     public List<BedRequest> jsonToBedRequestList(String beds) {
-        List<BedRequest> result=new ArrayList<>();
+        List<BedRequest> result = new ArrayList<>();
         try {
-            if(beds.startsWith("[")) {
+            if (beds.startsWith("[")) {
                 result = Arrays.asList(objectMapper.readValue(beds, BedRequest[].class));
             } else {
                 result = new ArrayList<>();
