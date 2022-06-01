@@ -31,6 +31,8 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Transactional
 @RequiredArgsConstructor
@@ -172,6 +174,16 @@ public class GuestHouseService {
     @Transactional(readOnly = true)
     public Bed findBedById(Long bedId) {
         return bedRepository.getById(bedId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GuestHouseDto> findRandomGuestHouseListByCity(String city){
+        List<GuestHouse> guestHouseListByCity = guestHouseRepository.findByCity(city);
+        List<GuestHouseDto> dtoList = guestHouseListByCity.stream().map(GuestHouseDto::from).collect(Collectors.toList());
+
+        Collections.shuffle(dtoList); // randomly shuffle elements
+
+        return dtoList.stream().limit(10).collect(Collectors.toList());
     }
 
     private HashMap<String, String> convertAddressToLatitudeLongitude(String addr) throws IOException {

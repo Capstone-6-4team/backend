@@ -5,6 +5,7 @@ import com.example.capstone2.guesthouse.entity.Room;
 import com.example.capstone2.guesthouse.service.GuestHouseService;
 import com.example.capstone2.reservation.dao.ReservationRepository;
 import com.example.capstone2.reservation.dto.ReservationCreateRequest;
+import com.example.capstone2.reservation.dto.ReservationPresenceRequest;
 import com.example.capstone2.reservation.dto.RoommateInfoDto;
 import com.example.capstone2.reservation.dto.RoommateInfoRequest;
 import com.example.capstone2.reservation.entitiy.Reservation;
@@ -45,5 +46,13 @@ public class ReservationService {
                 .collect(Collectors.toList());
 
         return roommateInfoDtos;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean reservationPresence(String email, ReservationPresenceRequest request){
+        User user = userService.findByEmail(email);
+        if(user==null) throw new NullPointerException("유저가 null입니다.");
+        if(request.getLocalDate()==null) throw new NullPointerException("date가 null입니다.");
+        return reservationRepository.existsByUser(user, request.getLocalDate());
     }
 }

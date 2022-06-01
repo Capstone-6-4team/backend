@@ -8,6 +8,7 @@ import lombok.Getter;
 
 @Getter
 public class RoommateInfoDto {
+    private String name;
     private boolean smoke;
     private boolean drinking;
     private Gender gender;
@@ -19,6 +20,7 @@ public class RoommateInfoDto {
     public static RoommateInfoDto from(Reservation reservation) {
         UserCharacteristic characteristic = reservation.getUser().getCharacteristic();
         RoommateInfoDto dto = new RoommateInfoDto();
+        dto.name = reservation.getUser().getName();
         dto.smoke = characteristic.isSmoke();
         dto.drinking = characteristic.isDrinking();
         dto.gender = characteristic.getGender();
