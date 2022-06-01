@@ -3,11 +3,13 @@ package com.example.capstone2.chat.entity;
 import com.example.capstone2.common.entity.BaseEntity;
 import com.example.capstone2.user.entity.User;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
 @Entity
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatMessage extends BaseEntity {
 
