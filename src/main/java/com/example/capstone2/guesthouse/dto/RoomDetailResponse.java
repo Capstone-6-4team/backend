@@ -87,7 +87,7 @@ public class RoomDetailResponse {
 
             String filePath = roomPhoto.getPhoto().getFilePath();
             String fileName = roomPhoto.getPhoto().getFileName();
-            String fileDir = filePath + "\\" + fileName;
+            String fileDir = Path.of(filePath, fileName).toString();
 
             Path path = Paths.get(fileDir);
 
