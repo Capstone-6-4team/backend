@@ -38,13 +38,13 @@ public class StompHandler implements ChannelInterceptor {
             accessor.setUser(authentication);
 
             String destination = accessor.getDestination();
-//            if(accessor.getCommand() == StompCommand.SUBSCRIBE && destination.contains("private")) {
-//                String[] split = destination.split("/");
-//                Long roomId = Long.parseLong(split[split.length - 1]);
-//                if(!chatMessageService.hasReservation(authentication.getName(), roomId)) {
-//                    throw new AccessDeniedException("채팅방에 접근할 권한이 없습니다.");
-//                };
-//            }
+            if(accessor.getCommand() == StompCommand.SUBSCRIBE && destination.contains("private")) {
+                String[] split = destination.split("/");
+                Long roomId = Long.parseLong(split[split.length - 1]);
+                if(!chatMessageService.hasReservation(authentication.getName(), roomId)) {
+                    throw new AccessDeniedException("채팅방에 접근할 권한이 없습니다.");
+                };
+            }
 
         } else {
             log.info("[StompHandler] 유효한 JWT 토큰이 없습니다.");
