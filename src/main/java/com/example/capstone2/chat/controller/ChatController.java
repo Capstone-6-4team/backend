@@ -30,8 +30,8 @@ public class ChatController {
         return chatMessageService.createChatMessage(roomId, username, message, "P");
     }
 
-    @MessageMapping("/reserved/{roomId}")
-    @SendTo("/sub/public/{roomId}")
+    @MessageMapping("/private/{roomId}")
+    @SendTo("/sub/private/{roomId}")
     public ChatDto privateBroadcastChat(Authentication authentication, @DestinationVariable Long roomId, String message) throws IOException {
         String username = authentication.getName();
         return chatMessageService.createChatMessage(roomId, username, message, "R");
