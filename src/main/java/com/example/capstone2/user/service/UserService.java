@@ -60,4 +60,11 @@ public class UserService implements UserDetailsService {
             throw new UsernameNotFoundException(String.format("[%s]는 등록되지 않은 이메일입니다."));
         });
     }
+
+    @Transactional(readOnly = true)
+    public User findById(Long id){
+        return userRepository.findById(id).orElseThrow(() -> {
+            throw new NullPointerException("존재하지 않는 유저입니다");
+        });
+    }
 }
