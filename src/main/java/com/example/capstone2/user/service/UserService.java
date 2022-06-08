@@ -57,7 +57,7 @@ public class UserService implements UserDetailsService {
     @Transactional(readOnly = true)
     public User findByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(() -> {
-            throw new UsernameNotFoundException(String.format("[%s]는 등록되지 않은 이메일입니다."));
+            throw new UsernameNotFoundException(String.format("[%s]는 등록되지 않은 이메일입니다.", email));
         });
     }
 }

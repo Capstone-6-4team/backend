@@ -39,8 +39,6 @@ public class RoomDetailResponse {
         byte[] blueprintBytes = null;
 
         GuestHouse guestHouse = room.getGuestHouse();
-        String location = guestHouse.getCity() + guestHouse.getDistrict() +
-                guestHouse.getRoadName() + guestHouse.getBuildingNum();
 
 //        List<BedResponse> bedResponseList = new ArrayList<>();
 
@@ -48,7 +46,7 @@ public class RoomDetailResponse {
         response.roomName = room.getRoomName();
         response.price = room.getPrice();
         response.roomConstraint = room.getRoomConstraint();
-        response.address = location;
+        response.address = guestHouse.getFullAddress();
 
         FileSystemResource blueprintResource = new FileSystemResource(room.getBlueprint().getPhoto().fullPath());
         try {

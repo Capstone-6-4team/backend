@@ -69,7 +69,6 @@ public class GuestHouse extends BaseEntity {
         address.add(getCity());
         address.add(getDistrict());
         address.add(getRoadName());
-        address.add(getRoadName());
         address.add(Integer.toString(getBuildingNum()));
         address.add(getSpecificLocation());
         return String.join(" ", address);
